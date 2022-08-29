@@ -1,13 +1,13 @@
   CLIENT_SERVICE:
-      container_name: CONTAINER_NAME
-      image: client:latest
-      entrypoint: /client
-      environment:
-        - CLI_ID=CLIENT_ID
-        - CLI_SERVER_ADDRESS=server:12345
-        - CLI_LOOP_LAPSE=1m2s
-        - CLI_LOG_LEVEL=DEBUG
-      networks:
-        - testing_net
-      depends_on:
-        - server
+    container_name: CONTAINER_NAME
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=CLIENT_ID
+      - CLI_SERVER_ADDRESS=server:12345
+      - CLI_LOOP_LAPSE=1m2s
+      - CLI_LOG_LEVEL=DEBUG
+    networks:
+      - testing_net
+    depends_on:
+      - server
