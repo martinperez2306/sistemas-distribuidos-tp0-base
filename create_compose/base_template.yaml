@@ -1,0 +1,13 @@
+version: '3'
+services:
+  server:
+    container_name: server
+    image: server:latest
+    entrypoint: python3 /main.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVER_PORT=12345
+      - SERVER_LISTEN_BACKLOG=7
+      - LOGGING_LEVEL=DEBUG
+    networks:
+      - testing_net
