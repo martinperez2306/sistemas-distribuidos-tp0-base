@@ -11,3 +11,5 @@ services:
       - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - "./config/server:/config"

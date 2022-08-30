@@ -11,6 +11,8 @@ services:
       - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - "./config/server:/config"
 
   client1:
     container_name: client1
@@ -25,6 +27,8 @@ services:
       - testing_net
     depends_on:
       - server
+    volumes:
+      - "./config/client:/config"
 
   client2:
     container_name: client2
@@ -39,6 +43,8 @@ services:
       - testing_net
     depends_on:
       - server
+    volumes:
+      - "./config/client:/config"
 
 networks:
   testing_net:

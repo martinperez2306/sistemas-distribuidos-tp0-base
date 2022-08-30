@@ -11,3 +11,5 @@
       - testing_net
     depends_on:
       - server
+    volumes:
+      - "./config/client:/config"
