@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -55,44 +58,55 @@ func (c *Client) StartClientLoop() {
 	c.createClientSocket()
 	msgID := 1
 
-loop:
-	// Send messages if the loopLapse threshold has been not surpassed
-	for timeout := time.After(c.config.LoopLapse); ; {
-		select {
-		case <-timeout:
-			break loop
-		default:
-		}
+	cancelChan := make(chan os.Signal, 1)
+	// catch SIGETRM or SIGINTERRUPT
+	signal.Notify(cancelChan, syscall.SIGINT, syscall.SIGTERM)
 
-		// Send
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v sent\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		msgID++
+	go func() {
+	loop:
+		// Send messages if the loopLapse threshold has been not surpassed
+		for timeout := time.After(c.config.LoopLapse); ; {
+			select {
+			case <-timeout:
+				break loop
+			default:
+			}
 
-		if err != nil {
-			log.Errorf(
-				"[CLIENT %v] Error reading from socket. %v.",
+			// Send
+			fmt.Fprintf(
+				c.conn,
+				"[CLIENT %v] Message N°%v sent\n",
 				c.config.ID,
-				err,
+				msgID,
 			)
+			msg, err := bufio.NewReader(c.conn).ReadString('\n')
+			msgID++
+
+			if err != nil {
+				log.Errorf(
+					"[CLIENT %v] Error reading from socket. %v.",
+					c.config.ID,
+					err,
+				)
+				c.conn.Close()
+				return
+			}
+			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, msg)
+
+			// Wait a time between sending one message and the next one
+			time.Sleep(c.config.LoopPeriod)
+
+			// Recreate connection to the server
 			c.conn.Close()
-			return
+			c.createClientSocket()
 		}
-		log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, msg)
 
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-
-		// Recreate connection to the server
+		log.Infof("[CLIENT %v] Closing connection", c.config.ID)
 		c.conn.Close()
-		c.createClientSocket()
-	}
+	}()
 
-	log.Infof("[CLIENT %v] Closing connection", c.config.ID)
+	sig := <-cancelChan
+	log.Infof("Caught shutdown signal %v", sig)
+	log.Infof("Proceed to shutdown client gracefully")
 	c.conn.Close()
 }
