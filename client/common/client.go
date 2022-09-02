@@ -22,17 +22,15 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config  ClientConfig
-	conn    net.Conn
-	running bool
+	config ClientConfig
+	conn   net.Conn
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config:  config,
-		running: true,
+		config: config,
 	}
 	return client
 }
@@ -60,57 +58,52 @@ func (c *Client) StartClientLoop() {
 	c.createClientSocket()
 	msgID := 1
 
-	cancelChan := make(chan os.Signal, 1)
+	exit := make(chan os.Signal, 1)
 	// catch SIGETRM or SIGINTERRUPT
-	signal.Notify(cancelChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		sig := <-cancelChan
-		c.running = false
-		log.Infof("[CLIENT %v] Caught shutdown signal %v", sig, c.config.ID)
-		log.Infof("[CLIENT %v]Proceed to shutdown client gracefully")
-	}()
+	timeout := time.After(c.config.LoopLapse)
 
 loop:
 	// Send messages if the loopLapse threshold has been not surpassed
-	for timeout := time.After(c.config.LoopLapse); ; {
+	for {
 		select {
+		case <-exit:
+			log.Infof("[CLIENT %v] Caught shutdown signal", c.config.ID)
+			log.Infof("[CLIENT %v] Proceed to shutdown client gracefully", c.config.ID)
+			break loop
 		case <-timeout:
 			break loop
+		case <-time.After(1 * time.Second): // Wait a time between sending one message and the next one
+			// Send
+			fmt.Fprintf(
+				c.conn,
+				"[CLIENT %v] Message N°%v sent\n",
+				c.config.ID,
+				msgID,
+			)
+			msg, err := bufio.NewReader(c.conn).ReadString('\n')
+			msgID++
+
+			if err != nil {
+				log.Errorf(
+					"[CLIENT %v] Error reading from socket. %v.",
+					c.config.ID,
+					err,
+				)
+				c.conn.Close()
+				return
+			}
+			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, msg)
+
+			time.Sleep(c.config.LoopPeriod)
+
+			// Recreate connection to the server
+			c.conn.Close()
+			c.createClientSocket()
 		default:
 		}
 
-		if !c.running {
-			break loop
-		}
-
-		// Send
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v sent\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		msgID++
-
-		if err != nil {
-			log.Errorf(
-				"[CLIENT %v] Error reading from socket. %v.",
-				c.config.ID,
-				err,
-			)
-			c.conn.Close()
-			return
-		}
-		log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, msg)
-
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-
-		// Recreate connection to the server
-		c.conn.Close()
-		c.createClientSocket()
 	}
 
 	log.Infof("[CLIENT %v] Closing connection", c.config.ID)
