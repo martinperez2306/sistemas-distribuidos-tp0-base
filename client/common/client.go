@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -56,7 +57,9 @@ func (c *Client) StartClientLoop() {
 	// Create the connection the server in every loop iteration. Send an
 	// autoincremental msgID to identify every message sent
 	c.createClientSocket()
-	msgID := 1
+	msg := "Martin_Perez_12345678_23-06-1995"
+	msg_length := len(msg)
+	log.Infof("Length %v", msg_length)
 
 	exit := make(chan os.Signal, 1)
 	// catch SIGETRM or SIGINTERRUPT
@@ -74,16 +77,10 @@ loop:
 			break loop
 		case <-timeout:
 			break loop
-		case <-time.After(1 * time.Second): // Wait a time between sending one message and the next one
+		default: // Wait a time between sending one message and the next one
 			// Send
-			fmt.Fprintf(
-				c.conn,
-				"[CLIENT %v] Message N°%v sent\n",
-				c.config.ID,
-				msgID,
-			)
-			msg, err := bufio.NewReader(c.conn).ReadString('\n')
-			msgID++
+			fmt.Fprintf(c.conn, "%d", msg_length)
+			server_msg, err := bufio.NewReader(c.conn).ReadString('\n')
 
 			if err != nil {
 				log.Errorf(
@@ -94,14 +91,19 @@ loop:
 				c.conn.Close()
 				return
 			}
-			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, msg)
+			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, server_msg)
+
+			server_msg_int, err := strconv.Atoi(server_msg)
+
+			if server_msg_int == msg_length {
+				fmt.Fprintf(c.conn, "%v", msg)
+			}
 
 			time.Sleep(c.config.LoopPeriod)
 
 			// Recreate connection to the server
 			c.conn.Close()
 			c.createClientSocket()
-		default:
 		}
 
 	}
