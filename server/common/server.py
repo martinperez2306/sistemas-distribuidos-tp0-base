@@ -45,11 +45,17 @@ class Server:
         """
         try:
             if(client_sock is not None):
-                msg = client_sock.recv(1024).rstrip().decode('utf-8')
+                msg_size = client_sock.recv(4).rstrip().decode('utf-8')
+                logging.info(
+                    'Message Size received from connection {}. MsgSize: {}'
+                    .format(client_sock.getpeername(), msg_size))
+                client_sock.send("{}\n".format(msg_size).encode('utf-8'))
+                msg = client_sock.recv(int(msg_size)).rstrip().decode('utf-8')
                 logging.info(
                     'Message received from connection {}. Msg: {}'
                     .format(client_sock.getpeername(), msg))
-                client_sock.send("Your Message has been received: {}\n".format(msg).encode('utf-8'))
+        except ValueError:
+            logging.info("Error while reading client message {}".format(client_sock))
         except OSError:
             logging.info("Error while reading client socket {}".format(client_sock))
         finally:
