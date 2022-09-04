@@ -73,6 +73,10 @@ func PrintConfig(v *viper.Viper) {
 	logrus.Infof("Server Address: %s", v.GetString("server.address"))
 	logrus.Infof("Communication Timeout: %v", v.GetDuration("communication.timeout"))
 	logrus.Infof("Log Level: %s", v.GetString("log.level"))
+	logrus.Infof("First Name: %s", v.GetString("first.name"))
+	logrus.Infof("Last Name: %s", v.GetString("last.name"))
+	logrus.Infof("Document: %s", v.GetString("document"))
+	logrus.Infof("Birth Date: %s", v.GetString("birth.date"))
 }
 
 func main() {
@@ -94,6 +98,8 @@ func main() {
 		CommunicationTO: v.GetDuration("communication.timeout"),
 	}
 
-	client := common.NewClient(clientConfig)
+	player := common.NewPlayer(v.GetString("first.name"), v.GetString("last.name"), v.GetString("document"), v.GetString("birth.date"))
+	client := common.NewClient(clientConfig, player)
+
 	client.StartClient()
 }

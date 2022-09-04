@@ -17,35 +17,37 @@ type ClientConfig struct {
 	CommunicationTO time.Duration
 }
 
-// Client Entity that encapsulates how
+// Client Entity
 type Client struct {
-	config       ClientConfig
-	communicator *Communicator
+	config        ClientConfig
+	communicator  *Communicator
+	winnerService *WinnerService
+	player        Player
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig) *Client {
+func NewClient(config ClientConfig, player Player) *Client {
 	communicator := NewCommunicator(config)
+	winnerService := NewWinnerService()
 	client := &Client{
-		config:       config,
-		communicator: communicator,
+		config:        config,
+		player:        player,
+		communicator:  communicator,
+		winnerService: winnerService,
 	}
 	return client
 }
 
-// StartClient Send messages to the client until some time threshold is met
+// StartClient Send messages to the server
 func (client *Client) StartClient() {
-	// Create the connection the server in every loop iteration. Send an
-	// autoincremental msgID to identify every message sent
+	// Create the connection the server
+	// Send Player data to verify winner
 	client.communicator.createClientSocket(*client)
 
 	go client.gracefulShutdown()
 
-	msg := "Martin_Perez_12345678_1995-06-23"
-
-	client.communicator.check_winner(client.config.ID, msg)
-
+	client.winnerService.checkWinner(client.communicator, client.config.ID, client.player)
 }
 
 func (client *Client) gracefulShutdown() {
