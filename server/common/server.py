@@ -17,6 +17,7 @@ class Server:
     # graceful shutdown the server
     def __exit_gracefully(self, *args):
         logging.info("Proceed to shutdown server gracefully")
+        self.communicator.turn_off()
         self.running = False
 
     def run(self):
