@@ -32,8 +32,7 @@ func InitConfig() (*viper.Viper, error) {
 	// Add env variables supported
 	v.BindEnv("id")
 	v.BindEnv("server", "address")
-	v.BindEnv("loop", "period")
-	v.BindEnv("loop", "lapse")
+	v.BindEnv("communication", "timeout")
 	v.BindEnv("log", "level")
 
 	// Try to read configuration from config file. If config file
@@ -46,12 +45,8 @@ func InitConfig() (*viper.Viper, error) {
 	}
 
 	// Parse time.Duration variables and return an error if those variables cannot be parsed
-	if _, err := time.ParseDuration(v.GetString("loop.lapse")); err != nil {
-		return nil, errors.Wrapf(err, "Could not parse CLI_LOOP_LAPSE env var as time.Duration.")
-	}
-
-	if _, err := time.ParseDuration(v.GetString("loop.period")); err != nil {
-		return nil, errors.Wrapf(err, "Could not parse CLI_LOOP_PERIOD env var as time.Duration.")
+	if _, err := time.ParseDuration(v.GetString("communication.timeout")); err != nil {
+		return nil, errors.Wrapf(err, "Could not parse CLI_COMMUNICATION_TIMEOUT env var as time.Duration.")
 	}
 
 	return v, nil
@@ -76,8 +71,7 @@ func PrintConfig(v *viper.Viper) {
 	logrus.Infof("Client configuration")
 	logrus.Infof("Client ID: %s", v.GetString("id"))
 	logrus.Infof("Server Address: %s", v.GetString("server.address"))
-	logrus.Infof("Loop Lapse: %v", v.GetDuration("loop.lapse"))
-	logrus.Infof("Loop Period: %v", v.GetDuration("loop.period"))
+	logrus.Infof("Communication Timeout: %v", v.GetDuration("communication.timeout"))
 	logrus.Infof("Log Level: %s", v.GetString("log.level"))
 }
 
@@ -95,12 +89,11 @@ func main() {
 	PrintConfig(v)
 
 	clientConfig := common.ClientConfig{
-		ServerAddress: v.GetString("server.address"),
-		ID:            v.GetString("id"),
-		LoopLapse:     v.GetDuration("loop.lapse"),
-		LoopPeriod:    v.GetDuration("loop.period"),
+		ServerAddress:   v.GetString("server.address"),
+		ID:              v.GetString("id"),
+		CommunicationTO: v.GetDuration("communication.timeout"),
 	}
 
 	client := common.NewClient(clientConfig)
-	client.StartClientLoop()
+	client.StartClient()
 }
