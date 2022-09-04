@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/signal"
@@ -56,7 +57,7 @@ func (c *Client) StartClientLoop() {
 	// Create the connection the server in every loop iteration. Send an
 	// autoincremental msgID to identify every message sent
 	c.createClientSocket()
-	msg := "Martin_Perez_12345678_23-06-1995"
+	msg := "Martin_Perez_12345678_1995-06-23"
 	msg_length := len(msg)
 	log.Infof("Length %v", msg_length)
 
@@ -79,7 +80,7 @@ loop:
 		default: // Wait a time between sending one message and the next one
 			// Send
 			fmt.Fprintf(c.conn, "%d", msg_length)
-			read_buff := make([]byte, 1024)
+			read_buff := make([]byte, 4)
 			n, err := c.conn.Read(read_buff)
 			data := make([]byte, 0)
 			data = append(data, read_buff[:n]...)
@@ -93,6 +94,7 @@ loop:
 				c.conn.Close()
 				return
 			}
+
 			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, data)
 
 			server_msg_int, _ := strconv.Atoi(string(data))
@@ -101,6 +103,43 @@ loop:
 
 			if server_msg_int == msg_length {
 				fmt.Fprintf(c.conn, "%v", msg)
+			}
+
+			read_buff_2 := make([]byte, 1)
+			data2 := make([]byte, 0)
+		loop2:
+			for timeout2 := time.After(3 * time.Second); ; { //establecer TO
+				select {
+				case <-timeout2:
+					break loop2
+				default:
+				}
+
+				n2, err2 := c.conn.Read(read_buff_2)
+				data2 = append(data2, read_buff_2[:n2]...)
+
+				if err2 != nil {
+					if err2 != io.EOF {
+						log.Printf("Read error: %s", err2)
+						c.conn.Close()
+						return
+					}
+				} else {
+					break loop2
+				}
+
+			}
+
+			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, data2)
+
+			server_msg_2, err := strconv.ParseBool(string(data2))
+
+			log.Infof("[CLIENT %v] Message from server %t", c.config.ID, server_msg_2)
+
+			if server_msg_2 {
+				log.Infof("[CLIENT %v] IM WINNER!", c.config.ID)
+			} else {
+				log.Infof("[CLIENT %v] Im not winner :(", c.config.ID)
 			}
 
 			time.Sleep(c.config.LoopPeriod)

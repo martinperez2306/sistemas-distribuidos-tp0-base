@@ -2,6 +2,9 @@ import socket
 import logging
 import signal
 
+from .utils import Contestant
+from .utils import is_winner
+
 
 class Server:
 
@@ -54,6 +57,13 @@ class Server:
                 logging.info(
                     'Message received from connection {}. Msg: {}'
                     .format(client_sock.getpeername(), msg))
+                first_name, last_name, document, birth_date = self.__parse_client_message(msg)
+                #contestant = Contestant(first_name, last_name, document, birth_date)
+                is_contstant_winner = is_winner(True)
+                logging.info(
+                    'Send is winner to connection {}. Is Winner: {}'
+                    .format(client_sock.getpeername(), is_contstant_winner))
+                client_sock.send("{}".format(is_contstant_winner).encode('utf-8'))
         except ValueError:
             logging.info("Error while reading client message {}".format(client_sock))
         except OSError:
@@ -79,3 +89,11 @@ class Server:
         except OSError:
             logging.info("Error while accept connection in server socket {}".format(self._server_socket))
             self._server_socket.close()
+
+    def __parse_client_message(self, msg):
+        split = msg.split("_")
+        first_name = split[0]
+        last_name = split[1]
+        document = split[2]
+        birth_date = split[3]
+        return first_name, last_name, document, birth_date
