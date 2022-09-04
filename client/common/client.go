@@ -40,13 +40,11 @@ func (client *Client) StartClient() {
 	// autoincremental msgID to identify every message sent
 	client.communicator.createClientSocket(*client)
 
-	//timeout := time.After(client.config.CommunicationTO)
-
 	go client.gracefulShutdown()
 
 	msg := "Martin_Perez_12345678_1995-06-23"
 
-	client.communicator.send(client.config.ID, msg)
+	client.communicator.check_winner(client.config.ID, msg)
 
 }
 
