@@ -32,3 +32,10 @@ def persist_winners(winners: list[Contestant]) -> None:
 		for winner in winners:
 			file.write(f'Full name: {winner.first_name} {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime("%d/%m/%Y")}\n')
 
+def parse_contestant_message(msg):
+	split = msg.split("_")
+	first_name = split[0]
+	last_name = split[1]
+	document = split[2]
+	birth_date = split[3]
+	return Contestant(first_name, last_name, document, birth_date)
