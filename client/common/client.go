@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -80,7 +79,10 @@ loop:
 		default: // Wait a time between sending one message and the next one
 			// Send
 			fmt.Fprintf(c.conn, "%d", msg_length)
-			server_msg, err := bufio.NewReader(c.conn).ReadString('\n')
+			read_buff := make([]byte, 1024)
+			n, err := c.conn.Read(read_buff)
+			data := make([]byte, 0)
+			data = append(data, read_buff[:n]...)
 
 			if err != nil {
 				log.Errorf(
@@ -91,9 +93,11 @@ loop:
 				c.conn.Close()
 				return
 			}
-			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, server_msg)
+			log.Infof("[CLIENT %v] Message from server: %v", c.config.ID, data)
 
-			server_msg_int, err := strconv.Atoi(server_msg)
+			server_msg_int, _ := strconv.Atoi(string(data))
+
+			log.Infof("[CLIENT %v] Message from server %d", c.config.ID, server_msg_int)
 
 			if server_msg_int == msg_length {
 				fmt.Fprintf(c.conn, "%v", msg)

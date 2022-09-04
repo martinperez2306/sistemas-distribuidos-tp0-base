@@ -49,7 +49,7 @@ class Server:
                 logging.info(
                     'Message Size received from connection {}. MsgSize: {}'
                     .format(client_sock.getpeername(), msg_size))
-                client_sock.send("{}\n".format(msg_size).encode('utf-8'))
+                client_sock.send("{}".format(msg_size).encode('utf-8'))
                 msg = client_sock.recv(int(msg_size)).rstrip().decode('utf-8')
                 logging.info(
                     'Message received from connection {}. Msg: {}'
