@@ -1,10 +1,14 @@
 import socket
 import logging
 
-from .utils import Contestant
-from .utils import is_winner, parse_contestant_message
+from .winner_service import WinnerService
 
 PREPARE_MSG_SIZE = 4
+
+CLOSE_CONN_FLAG = 0
+CLOSE_CONN_SIZE = 1
+
+MAX_BUFF_SIZE = 1024
 
 class Communicator:
     def __init__(self, port, listen_backlog):
@@ -13,6 +17,7 @@ class Communicator:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._client_socket = None
+        self._winner_service = WinnerService()
 
     def handle_communication(self):
         self._client_socket = self.__accept_new_connection()
@@ -67,7 +72,7 @@ class Communicator:
             
         if (req_is_number):
             request_size = int(request)
-            if (request_size == 0):
+            if (request_size == CLOSE_CONN_FLAG):
                 logging.info(
                         'Message Size received from connection {}. MsgSize: {}. Its time to close connection'
                         .format(self._client_socket.getpeername(), request_size))
@@ -78,15 +83,22 @@ class Communicator:
                         .format(self._client_socket.getpeername(), request_size))
                 self.__respond_and_wait(request, request_size)
         else:
+            if not request:
+                return
             logging.info(
-                        'Message received from connection {}. Msg: {}. Im ready to respond using data information'
+                        'Data received from connection {}. Im ready to respond using data information'
+                        .format(self._client_socket.getpeername()))
+            logging.debug(
+                        'Data received from connection {}. Data {}'
                         .format(self._client_socket.getpeername(), request))
-            contestant = parse_contestant_message(request)
-            is_contstant_winner = is_winner(contestant)
+            winners_msg = self._winner_service.get_winners_response(request)
             logging.info(
-                        'Send is winner to connection {}. Is Winner: {}'
-                        .format(self._client_socket.getpeername(), is_contstant_winner))
-            self.__respond_and_wait(is_contstant_winner, 1)
+                        'Send is winner to connection {}.'
+                        .format(self._client_socket.getpeername()))
+            logging.debug(
+                        'Send is winner to connection {}. Winners: {}'
+                        .format(self._client_socket.getpeername(), winners_msg))
+            self.__respond_and_wait(winners_msg, CLOSE_CONN_SIZE)
 
     def __respond_and_wait(self, msg, expected_response_size):
         self.__send(msg)
@@ -102,7 +114,11 @@ class Communicator:
             Read client socket specific buffsize and returns the message of communication
         """
         if(self._client_socket is not None):
-            return self._client_socket.recv(bufsize).rstrip().decode('utf-8')
+            if(bufsize < MAX_BUFF_SIZE):
+                return self._client_socket.recv(bufsize).rstrip().decode('utf-8')
+            else:
+                data = self._client_socket.recv(MAX_BUFF_SIZE).rstrip().decode('utf-8')
+                data += self.__receive(bufsize - MAX_BUFF_SIZE)
 
     def __send(self, msg):
         """

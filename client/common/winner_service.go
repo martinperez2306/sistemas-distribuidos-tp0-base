@@ -47,7 +47,7 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	if accepted_server_size_msg == msg_length {
 		log.Infof("[CLIENT %v] Im ok to send message data %s", clientID, msg)
-		data, err := communicator.sendAndWait(clientID, msg, CONFIRMATION_MSG_SIZE)
+		data, err := communicator.sendAndWait(clientID, msg, msg_length) //The client receives at most the same message
 
 		if err != nil {
 			log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
@@ -55,14 +55,12 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 			return
 		}
 
-		winner_server_msg, err := strconv.ParseBool(data)
+		log.Infof("[CLIENT %v] Winner Server Message %s", clientID, data)
 
-		log.Infof("[CLIENT %v] Winner Server Message %t", clientID, winner_server_msg)
-
-		if winner_server_msg {
-			log.Infof("[CLIENT %v] IM WINNER!", clientID)
+		if data == "empty" {
+			log.Infof("[CLIENT %v] No winners", clientID)
 		} else {
-			log.Infof("[CLIENT %v] Im not winner :(", clientID)
+			log.Infof("[CLIENT %v] winners: %s", data)
 		}
 
 	} else {
