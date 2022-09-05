@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -10,11 +9,6 @@ import (
 
 const FILE_MSG_SEPARATOR string = ","
 const SERVER_MSG_SEPARATOR string = "_"
-
-const CLOSE_CONN_MSG = 0
-
-const PREPARE_MSG_SIZE = 4
-const CONFIRMATION_MSG_SIZE = 1
 
 type WinnerService struct {
 }
@@ -31,66 +25,18 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 	players := winnerService.validatePlayerList(playerList)
 	msg := winnerService.getPlayersMsg(players)
 
-	msg_length := len(msg)
-
-	//Step 1: Tell to server the Player Message Length and wait for Server Confirmation
-
-	data, err := communicator.sendAndWait(clientID, strconv.Itoa(msg_length), PREPARE_MSG_SIZE)
+	data, err := communicator.request(clientID, msg)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
-		communicator.shutdown()
+		log.Infof("[CLIENT %v] Cant check winner: %v", clientID, err)
 		return
 	}
 
-	accepted_server_size_msg, _ := strconv.Atoi(data)
-
-	log.Infof("[CLIENT %v] Accepted Server Size Message %d", clientID, accepted_server_size_msg)
-
-	//Step 2: Check Server Confirmation and send Player Message
-
-	if accepted_server_size_msg == msg_length {
-		log.Infof("[CLIENT %v] Im ok to send message data %s", clientID, msg)
-		data, err := communicator.sendAndWait(clientID, msg, msg_length) //The client receives at most the same message
-
-		if err != nil {
-			log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
-			communicator.shutdown()
-			return
-		}
-
-		log.Infof("[CLIENT %v] Winner Server Message %s", clientID, data)
-
-		if data == "empty" {
-			log.Infof("[CLIENT %v] No winners", clientID)
-		} else {
-			log.Infof("[CLIENT %v] winners: %s", data)
-		}
-
+	if data == "empty" {
+		log.Infof("[CLIENT %v] No winners", clientID)
 	} else {
-		log.Infof("[CLIENT %v] I cant send message data %v to server", clientID, msg)
+		log.Infof("[CLIENT %v] winners: %s", data)
 	}
-
-	//Step 3: Tell the server to end the communication. It will be notified with a message size equal to zero.
-
-	log.Infof("[CLIENT %v] Send ends connection", clientID)
-	end_connection_data, err := communicator.sendAndWait(clientID, strconv.Itoa(CLOSE_CONN_MSG), CONFIRMATION_MSG_SIZE)
-
-	if err != nil {
-		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
-		communicator.shutdown()
-		return
-	}
-
-	end_communication_server_msg, _ := strconv.Atoi(end_connection_data)
-
-	if end_communication_server_msg == CLOSE_CONN_MSG {
-		log.Infof("[CLIENT %v] Close connection successfuly", clientID)
-	} else {
-		log.Infof("[CLIENT %v] Close connection with error: %v", clientID, err.Error())
-	}
-
-	communicator.shutdown()
 }
 
 func (winnerService *WinnerService) validatePlayerList(playerList []string) []Player {

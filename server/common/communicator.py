@@ -4,9 +4,11 @@ import logging
 from .winner_service import WinnerService
 
 PREPARE_MSG_SIZE = 4
+RESPONSE_MSG_SIZE = 1
+CLOSE_CONN_SIZE = 2
 
-CLOSE_CONN_FLAG = 0
-CLOSE_CONN_SIZE = 1
+RESPONSE_MSG_FLAG = "0"
+CLOSE_CONN_FLAG = "-1"
 
 MAX_BUFF_SIZE = 1024
 
@@ -53,7 +55,7 @@ class Communicator:
         try:
             if(self._client_socket is not None):
                 msg_size = self.__receive(PREPARE_MSG_SIZE)
-                self.__respond(msg_size)
+                self.__respond(msg_size, None)
         except ValueError:
             logging.info("Error while reading client message {}".format(self._client_socket))
             self.end_communication()
@@ -63,7 +65,7 @@ class Communicator:
         finally:
             self.end_communication()
 
-    def __respond(self, request):
+    def __respond(self, request, response):
         try:
             int(request)
             req_is_number = True
@@ -72,21 +74,26 @@ class Communicator:
             
         if (req_is_number):
             request_size = int(request)
-            if (request_size == CLOSE_CONN_FLAG):
+            if (request == CLOSE_CONN_FLAG):
                 logging.info(
-                        'Message Size received from connection {}. MsgSize: {}. Its time to close connection'
+                        'Message Size received from connection {}. Request Size: {}. Its time to close connection'
                         .format(self._client_socket.getpeername(), request_size))
-                self.__respond_and_continue(request)
+                self.__respond_and_continue(request, response)
+            if (request == RESPONSE_MSG_FLAG):
+                logging.info(
+                        'Message Size received from connection {}. Request Size: {}. Im ok to response data.'
+                        .format(self._client_socket.getpeername(), request_size))
+                self.__respond_and_wait(request, response, CLOSE_CONN_SIZE)
             else:
                 logging.info(
-                        'Message Size received from connection {}. MsgSize: {}. Im ok to receive data.'
+                        'Message Size received from connection {}. Request Size: {}. Im ok to receive data.'
                         .format(self._client_socket.getpeername(), request_size))
-                self.__respond_and_wait(request, request_size)
+                self.__respond_and_wait(request, response, request_size)
         else:
             if not request:
                 return
             logging.info(
-                        'Data received from connection {}. Im ready to respond using data information'
+                        'Data received from connection {}.'
                         .format(self._client_socket.getpeername()))
             logging.debug(
                         'Data received from connection {}. Data {}'
@@ -98,14 +105,20 @@ class Communicator:
             logging.debug(
                         'Send is winner to connection {}. Winners: {}'
                         .format(self._client_socket.getpeername(), winners_msg))
-            self.__respond_and_wait(winners_msg, CLOSE_CONN_SIZE)
-
-    def __respond_and_wait(self, msg, expected_response_size):
+            self.__respond_and_wait(request, winners_msg, RESPONSE_MSG_SIZE)
+            
+    def __respond_and_wait(self, request, response, expected_response_size):
+        msg = request
+        if(request == RESPONSE_MSG_FLAG):
+            msg = response
         self.__send(msg)
         response_msg = self.__receive(expected_response_size)
-        self.__respond(response_msg)
+        self.__respond(response_msg, response)
 
-    def __respond_and_continue(self, msg): 
+    def __respond_and_continue(self, request, response): 
+        msg = request
+        if(request == RESPONSE_MSG_FLAG):
+            msg = response
         self.__send(msg)
 
     def __receive(self, bufsize):
