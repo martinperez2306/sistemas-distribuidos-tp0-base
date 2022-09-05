@@ -21,16 +21,13 @@ services:
     environment:
       - CLI_ID=1
       - CLI_SERVER_ADDRESS=server:12345
-      - CLI_FIRST_NAME=Martin
-      - CLI_LAST_NAME=Perez
-      - CLI_DOCUMENT=12345678
-      - CLI_BIRTH_DATE=1995-06-23
     networks:
       - testing_net
     depends_on:
       - server
     volumes:
       - "./config/client:/config"
+      - "./.data:/.data"
 
 networks:
   testing_net:

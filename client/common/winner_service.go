@@ -3,11 +3,13 @@ package common
 import (
 	"bytes"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
-const MSG_SEPARATOR string = "_"
+const FILE_MSG_SEPARATOR string = ","
+const SERVER_MSG_SEPARATOR string = "_"
 
 const CLOSE_CONN_MSG = 0
 
@@ -24,8 +26,10 @@ func NewWinnerService() *WinnerService {
 }
 
 // Check if Player is a Winner sending message to server with communicator
-func (winnerService *WinnerService) checkWinner(communicator *Communicator, clientID string, player Player) {
-	msg := winnerService.getPlayerMsg(player)
+func (winnerService *WinnerService) checkWinners(communicator *Communicator, clientID string, playerList []string) {
+
+	players := winnerService.validatePlayerList(playerList)
+	msg := winnerService.getPlayersMsg(players)
 
 	msg_length := len(msg)
 
@@ -89,15 +93,30 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 	communicator.shutdown()
 }
 
+func (winnerService *WinnerService) validatePlayerList(playerList []string) []Player {
+	var players []Player
+	for _, playerLine := range playerList {
+		playerData := strings.Split(playerLine, FILE_MSG_SEPARATOR)
+		player := NewPlayer(playerData[0], playerData[1], playerData[2], playerData[3])
+		players = append(players, player)
+	}
+	return players
+}
+
 // Builds and return the message to send Server and check if Player is Winner
-func (winnerService *WinnerService) getPlayerMsg(player Player) string {
+func (winnerService *WinnerService) getPlayersMsg(players []Player) string {
 	var buffer bytes.Buffer
-	buffer.WriteString(player.firstName)
-	buffer.WriteString(MSG_SEPARATOR)
-	buffer.WriteString(player.lastName)
-	buffer.WriteString(MSG_SEPARATOR)
-	buffer.WriteString(player.document)
-	buffer.WriteString(MSG_SEPARATOR)
-	buffer.WriteString(player.birthDate)
+	for i, player := range players {
+		buffer.WriteString(player.firstName)
+		buffer.WriteString(SERVER_MSG_SEPARATOR)
+		buffer.WriteString(player.lastName)
+		buffer.WriteString(SERVER_MSG_SEPARATOR)
+		buffer.WriteString(player.document)
+		buffer.WriteString(SERVER_MSG_SEPARATOR)
+		buffer.WriteString(player.birthDate)
+		if i < (len(players) - 1) {
+			buffer.WriteString("\n")
+		}
+	}
 	return buffer.String()
 }

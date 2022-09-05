@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,17 +23,15 @@ type Client struct {
 	config        ClientConfig
 	communicator  *Communicator
 	winnerService *WinnerService
-	player        Player
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig, player Player) *Client {
+func NewClient(config ClientConfig) *Client {
 	communicator := NewCommunicator(config)
 	winnerService := NewWinnerService()
 	client := &Client{
 		config:        config,
-		player:        player,
 		communicator:  communicator,
 		winnerService: winnerService,
 	}
@@ -41,13 +40,41 @@ func NewClient(config ClientConfig, player Player) *Client {
 
 // StartClient Send messages to the server
 func (client *Client) StartClient() {
+	//Reads client data file
+	filepath := "./.data/"
+	filename := fmt.Sprintf("dataset-%s.csv", client.config.ID)
+	filepath = filepath + filename
+	log.Infof("[CLIENT %v] Read file %s", client.config.ID, filepath)
+
+	playerLines, err := client.getLinesFromFile(filepath)
+
+	if err != nil {
+		log.Infof("[CLIENT %v] No data to request. Err: %v", client.config.ID, err)
+		os.Exit(0)
+	}
+
 	// Create the connection the server
 	// Send Player data to verify winner
 	client.communicator.createClientSocket(*client)
 
 	go client.gracefulShutdown()
 
-	client.winnerService.checkWinner(client.communicator, client.config.ID, client.player)
+	client.winnerService.checkWinners(client.communicator, client.config.ID, playerLines)
+}
+
+func (client *Client) getLinesFromFile(filepath string) ([]string, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	return lines, scanner.Err()
 }
 
 func (client *Client) gracefulShutdown() {
