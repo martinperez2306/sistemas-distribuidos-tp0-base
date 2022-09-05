@@ -35,7 +35,7 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 	if data == "empty" {
 		log.Infof("[CLIENT %v] No winners", clientID)
 	} else {
-		log.Infof("[CLIENT %v] winners: %s", data)
+		log.Infof("[CLIENT %v] winners: %s", clientID, data)
 	}
 }
 
