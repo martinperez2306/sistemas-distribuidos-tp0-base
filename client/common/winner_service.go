@@ -24,6 +24,8 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	msg_length := len(msg)
 
+	//Step 1: Tell to server the Player Message Length and wait for Server Confirmation
+
 	data, err := communicator.sendAndWait(clientID, strconv.Itoa(msg_length), 4)
 
 	if err != nil {
@@ -36,6 +38,8 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	log.Infof("[CLIENT %v] Accepted Server Size Message %d", clientID, accepted_server_size_msg)
 
+	//Step 2: Check Server Confirmation and send Player Message
+
 	if accepted_server_size_msg == msg_length {
 		log.Infof("[CLIENT %v] Im ok to send message data %s", clientID, msg)
 		data, err := communicator.sendAndWait(clientID, msg, 1)
@@ -46,7 +50,7 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 			return
 		}
 
-		winner_server_msg, err := strconv.ParseBool(string(data))
+		winner_server_msg, err := strconv.ParseBool(data)
 
 		log.Infof("[CLIENT %v] Winner Server Message %t", clientID, winner_server_msg)
 
@@ -58,6 +62,25 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	} else {
 		log.Infof("[CLIENT %v] I cant send message data %v to server", clientID, msg)
+	}
+
+	//Step 3: Tell the server to end the communication. It will be notified with a message size equal to zero.
+
+	log.Infof("[CLIENT %v] Send ends connection", clientID)
+	end_connection_data, err := communicator.sendAndWait(clientID, strconv.Itoa(0), 1)
+
+	if err != nil {
+		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
+		communicator.shutdown()
+		return
+	}
+
+	end_communication_server_msg, _ := strconv.Atoi(end_connection_data)
+
+	if end_communication_server_msg == 0 {
+		log.Infof("[CLIENT %v] Close connection successfuly", clientID)
+	} else {
+		log.Infof("[CLIENT %v] Close connection with error: %v", clientID, err.Error())
 	}
 
 	communicator.shutdown()

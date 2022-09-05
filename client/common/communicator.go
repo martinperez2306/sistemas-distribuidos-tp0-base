@@ -43,9 +43,9 @@ func (communicator *Communicator) createClientSocket(client Client) error {
 
 // Send message to server and waits for a response
 // If no response arrives at specefic time, throws TimeOut error
-func (communicator *Communicator) sendAndWait(clientID string, msg string, expected_response_size int) (string, error) {
-	log.Infof("[CLIENT %v] Send message: %v and wait: %v for response with size: %d", clientID, msg, communicator.communicationTO, expected_response_size)
-	read_buff := make([]byte, expected_response_size)
+func (communicator *Communicator) sendAndWait(clientID string, msg string, expectedResponseSize int) (string, error) {
+	log.Infof("[CLIENT %v] Send message: %v and wait: %v for response with size: %d", clientID, msg, communicator.communicationTO, expectedResponseSize)
+	readBuff := make([]byte, expectedResponseSize)
 	data := make([]byte, 0)
 
 	fmt.Fprintf(communicator.conn, "%s", msg)
@@ -53,7 +53,7 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 	log.Debugf("[CLIENT %v] Waiting response for message %v", clientID, msg)
 	communicator.conn.SetReadDeadline(time.Now().Add(communicator.communicationTO))
 
-	n, err := communicator.conn.Read(read_buff)
+	n, err := communicator.conn.Read(readBuff)
 
 	if err != nil {
 		log.Infof("[CLIENT %v] Read error: %s", clientID)
@@ -61,12 +61,12 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 		return "", err
 	}
 
-	data = append(data, read_buff[:n]...)
+	data = append(data, readBuff[:n]...)
 
-	response_msg := string(data)
+	responseMsg := string(data)
 
-	log.Infof("[CLIENT %v] Response Message from server: %v", clientID, response_msg)
-	return response_msg, nil
+	log.Infof("[CLIENT %v] Response Message from server: %v", clientID, responseMsg)
+	return responseMsg, nil
 }
 
 // Ends communication with server
