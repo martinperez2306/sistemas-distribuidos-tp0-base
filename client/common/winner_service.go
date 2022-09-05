@@ -9,6 +9,11 @@ import (
 
 const MSG_SEPARATOR string = "_"
 
+const CLOSE_CONN_MSG = 0
+
+const PREPARE_MSG_SIZE = 4
+const CONFIRMATION_MSG_SIZE = 1
+
 type WinnerService struct {
 }
 
@@ -26,7 +31,7 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	//Step 1: Tell to server the Player Message Length and wait for Server Confirmation
 
-	data, err := communicator.sendAndWait(clientID, strconv.Itoa(msg_length), 4)
+	data, err := communicator.sendAndWait(clientID, strconv.Itoa(msg_length), PREPARE_MSG_SIZE)
 
 	if err != nil {
 		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
@@ -42,7 +47,7 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	if accepted_server_size_msg == msg_length {
 		log.Infof("[CLIENT %v] Im ok to send message data %s", clientID, msg)
-		data, err := communicator.sendAndWait(clientID, msg, 1)
+		data, err := communicator.sendAndWait(clientID, msg, CONFIRMATION_MSG_SIZE)
 
 		if err != nil {
 			log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
@@ -67,7 +72,7 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 	//Step 3: Tell the server to end the communication. It will be notified with a message size equal to zero.
 
 	log.Infof("[CLIENT %v] Send ends connection", clientID)
-	end_connection_data, err := communicator.sendAndWait(clientID, strconv.Itoa(0), 1)
+	end_connection_data, err := communicator.sendAndWait(clientID, strconv.Itoa(CLOSE_CONN_MSG), CONFIRMATION_MSG_SIZE)
 
 	if err != nil {
 		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
@@ -77,7 +82,7 @@ func (winnerService *WinnerService) checkWinner(communicator *Communicator, clie
 
 	end_communication_server_msg, _ := strconv.Atoi(end_connection_data)
 
-	if end_communication_server_msg == 0 {
+	if end_communication_server_msg == CLOSE_CONN_MSG {
 		log.Infof("[CLIENT %v] Close connection successfuly", clientID)
 	} else {
 		log.Infof("[CLIENT %v] Close connection with error: %v", clientID, err.Error())
