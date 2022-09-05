@@ -56,7 +56,7 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 	n, err := communicator.conn.Read(readBuff)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Read error: %s", clientID)
+		log.Infof("[CLIENT %v] Read error: %s", clientID, err.Error())
 		communicator.shutdown()
 		return "", err
 	}
