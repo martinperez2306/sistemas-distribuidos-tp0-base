@@ -96,14 +96,14 @@ class Communicator:
                         'Data received from connection {}.'
                         .format(self._client_socket.getpeername()))
             logging.debug(
-                        'Data received from connection {}. Data {}'
+                        'Data received from connection {}. Data: {}'
                         .format(self._client_socket.getpeername(), request))
             winners_msg = self._winner_service.get_winners_response(request)
             logging.info(
-                        'Send is winner to connection {}.'
+                        'Send winners to connection {}.'
                         .format(self._client_socket.getpeername()))
             logging.debug(
-                        'Send is winner to connection {}. Winners: {}'
+                        'Send winners to connection {}. Winners: {}'
                         .format(self._client_socket.getpeername(), winners_msg))
             self.__respond_and_wait(request, winners_msg, RESPONSE_MSG_SIZE)
             
