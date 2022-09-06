@@ -2,6 +2,6 @@
 server:
   address: "server:12345"
 communication:
-  timeout: "45s"
+  timeout: "120s"
 log:
   level: "debug"

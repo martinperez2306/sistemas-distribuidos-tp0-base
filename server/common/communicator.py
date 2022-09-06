@@ -3,12 +3,13 @@ import logging
 
 from .winner_service import WinnerService
 
-PREPARE_MSG_SIZE = 1024
-RESPONSE_MSG_SIZE = 1
-CLOSE_CONN_SIZE = 2
+PREPARE_MSG_SIZE = 12
+RESPONSE_MSG_SIZE = 13
+CLOSE_CONN_SIZE = 13
 
-RESPONSE_MSG_CODE = "0"
-CLOSE_CONN_CODE = "-1"
+RESPONSE_MSG_CODE = "0000000000000"
+SEND_RESPONSE_MSG_CODE = "0000000000001"
+CLOSE_CONN_CODE = "9999999999999"
 
 BUFF_SIZE = 4096
 
@@ -54,8 +55,8 @@ class Communicator:
         """
         try:
             if(self._client_socket is not None):
-                msg_bytes = self.__receive(PREPARE_MSG_SIZE)
-                self.__respond(msg_bytes.decode('utf-8'), None)
+                request = self.__receive(PREPARE_MSG_SIZE)
+                self.__respond(request, None)
         except ValueError as error:
             logging.info("Error while reading client message {}. Error: {}".format(self._client_socket, error))
             self.end_communication()
@@ -65,75 +66,88 @@ class Communicator:
         finally:
             self.end_communication()
 
-    def __respond(self, request, response):
+    def __respond(self, request: bytes, response_msg: str):
+        request_msg = request.decode('utf-8')
         try:
-            int(request)
+            int(request_msg)
             req_is_number = True
         except ValueError:
             req_is_number = False
             
         if (req_is_number):
             request_size = int(request)
-            if (request == CLOSE_CONN_CODE):
+            if (request_msg == CLOSE_CONN_CODE):
                 logging.info(
                         'Message Size received from connection {}. Request Size: {}. Its time to close connection'
                         .format(self._client_socket.getpeername(), request_size))
-                self.__respond_and_continue(request, response)
-            elif (request == RESPONSE_MSG_CODE):
+                self.__respond_and_continue(request, response_msg)
+            elif (request_msg == RESPONSE_MSG_CODE):
+                winners_size = len(response_msg.encode('utf-8'))
+                logging.info(
+                        'Message Size received from connection {}. Request Size: {}. Telling client response size {}.'
+                        .format(self._client_socket.getpeername(), request_size, winners_size))
+                logging.debug(
+                            'Send winners size to connection {}. Winners Size: {}'
+                            .format(self._client_socket.getpeername(), response_msg))
+                winners_size_req = str(winners_size).zfill(RESPONSE_MSG_SIZE).encode('utf-8')
+                self.__respond_and_wait(winners_size_req, response_msg, RESPONSE_MSG_SIZE)
+            elif (request_msg == SEND_RESPONSE_MSG_CODE):
                 logging.info(
                         'Message Size received from connection {}. Request Size: {}. Im ok to response data.'
                         .format(self._client_socket.getpeername(), request_size))
                 logging.debug(
                             'Send winners to connection {}. Winners: {}'
-                            .format(self._client_socket.getpeername(), response))
-                self.__respond_and_wait(request, response, CLOSE_CONN_SIZE)
+                            .format(self._client_socket.getpeername(), response_msg))
+                self.__respond_and_wait(request, response_msg, CLOSE_CONN_SIZE)
             else:
                 logging.info(
                         'Message Size received from connection {}. Request Size: {}. Im ok to receive data.'
                         .format(self._client_socket.getpeername(), request_size))
-                self.__respond_and_wait(request, response, request_size)
+                self.__respond_and_wait(request, response_msg, request_size)
                 
         else:
-            if not request:
+            if not request_msg:
                 return
+            recived_len = str(len(request))
             logging.info(
                         'Data received from connection {}.'
                         .format(self._client_socket.getpeername()))
             logging.debug(
                         'Data received from connection {}. Data: {}'
-                        .format(self._client_socket.getpeername(), request))
-            winners_msg = self._winner_service.get_winners_response(request)
+                        .format(self._client_socket.getpeername(), request_msg))
+            winners_msg = self._winner_service.get_winners_response(request_msg)
             logging.info(
                         'Send recv ok to client {}. Recived: {}'
-                        .format(self._client_socket.getpeername(), len(request)))
-            self.__respond_and_wait(len(request), winners_msg, RESPONSE_MSG_SIZE)
+                        .format(self._client_socket.getpeername(), recived_len))
+            self.__respond_and_wait(request, winners_msg, RESPONSE_MSG_SIZE)
             
-    def __respond_and_wait(self, request, response, expected_response_size):
+    def __respond_and_wait(self, request, response_msg, expected_response_size):
         """
             Responde with a message and waits for other response.
-            If request is RESPONSE_MSG_CODE send the response.
+            If request is SEND_RESPONSE_MSG_CODE send the response.
             Else send the request.
         """
-        msg = request
-        if(request == RESPONSE_MSG_CODE):
-            msg = response
+        request_msg = request.decode('utf-8')
+        msg = request_msg
+        if(request_msg == SEND_RESPONSE_MSG_CODE):
+            msg = response_msg
         logging.info('Respond to client {} with {} and wait.'
                     .format(self._client_socket.getpeername(), msg))
         self.__send(msg)
 
-        msg_bytes = self.__receive(expected_response_size)
-        response_msg = msg_bytes.decode('utf-8')
-        self.__respond(response_msg, response)
+        client_response = self.__receive(expected_response_size)
+        self.__respond(client_response, response_msg)
 
-    def __respond_and_continue(self, request, response):
+    def __respond_and_continue(self, request, response_msg):
         """
             Responde with a message and continue.
-            If request is RESPONSE_MSG_CODE send the response.
+            If request is SEND_RESPONSE_MSG_CODE send the response.
             Else send the request.
         """ 
-        msg = request
-        if(request == RESPONSE_MSG_CODE):
-            msg = response
+        request_msg = request.decode('utf-8')
+        msg = request_msg
+        if(request_msg == SEND_RESPONSE_MSG_CODE):
+            msg = response_msg
         logging.info('Respond to client {} with {} and continue.'
                     .format(self._client_socket.getpeername(), msg))
         self.__send(msg)
@@ -149,12 +163,12 @@ class Communicator:
         data = b''
         if(self._client_socket is not None):
             self._client_socket.setblocking(True)
-            try:
-                while True:
+            while len(data) < buffsize:
+                try:
                     data += self._client_socket.recv(BUFF_SIZE)
                     self._client_socket.setblocking(False)
-            except socket.error:
-                pass
+                except socket.error:
+                    pass
             logging.info('Recived data {}: {}'
                     .format(self._client_socket.getpeername(), len(data)))
             return data
@@ -164,6 +178,7 @@ class Communicator:
             Send a message.
             Write client socket specific the message of communication
         """
+        logging.info('Sending len data: {}'.format(len(msg)))
         if(self._client_socket is not None):
             self._client_socket.sendall("{}".format(msg).encode('utf-8'))
 
