@@ -170,7 +170,7 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 	readBuff := make([]byte, expectedResponseSize)
 	data := make([]byte, 0)
 
-	sendMsg := fmt.Sprintf("%s", msg)
+	sendMsg := fmt.Sprintf("%v", msg)
 	bytesWrited, err := communicator.conn.Write([]byte(sendMsg))
 	log.Debugf("[CLIENT %v] Bytes writed %v", clientID, bytesWrited)
 
