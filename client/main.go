@@ -72,6 +72,7 @@ func PrintConfig(v *viper.Viper) {
 	logrus.Infof("Client ID: %s", v.GetString("id"))
 	logrus.Infof("Server Address: %s", v.GetString("server.address"))
 	logrus.Infof("Communication Timeout: %v", v.GetDuration("communication.timeout"))
+	logrus.Infof("Log Level: %v", v.GetDuration("log.level"))
 }
 
 func main() {

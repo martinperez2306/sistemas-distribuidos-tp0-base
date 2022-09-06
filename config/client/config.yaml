@@ -4,4 +4,4 @@ server:
 communication:
   timeout: "45s"
 log:
-  level: "info"
+  level: "debug"

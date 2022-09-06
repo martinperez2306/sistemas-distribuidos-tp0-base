@@ -13,8 +13,10 @@ import (
 const RESPONSE_MSG = 0
 const CLOSE_CONN_MSG = -1
 
-const PREPARE_MSG_SIZE = 4
+const PREPARE_MSG_SIZE = 2048
 const CLOSE_MSG_SIZE = 2
+
+const MAX_BUFF_SIZE = 2048 //TODO
 
 // Communicator Entity
 type Communicator struct {
@@ -53,12 +55,14 @@ func (communicator *Communicator) createClientSocket(client Client) error {
 // Request needs a message. The response is string.
 // If any error occurs then return it.
 func (communicator *Communicator) request(clientID string, msg string) (string, error) {
-	request, req_err := communicator.sendRequest(clientID, msg)
+	server_recived_data_size_str, req_err := communicator.sendRequest(clientID, msg)
 	if req_err != nil {
 		return "", req_err
 	}
 
-	response, res_err := communicator.getResponse(clientID, request, len(request))
+	server_recived_data_size, _ := strconv.Atoi(server_recived_data_size_str) //The client receives at most the same message
+
+	response, res_err := communicator.getResponse(clientID, msg, server_recived_data_size)
 	if res_err != nil {
 		return "", req_err
 	}
@@ -74,13 +78,14 @@ func (communicator *Communicator) request(clientID string, msg string) (string, 
 func (communicator *Communicator) sendRequest(clientID string, msg string) (string, error) {
 	msg_length := len(msg)
 
-	log.Infof("[CLIENT %v] Send request: %v", clientID, msg)
+	log.Infof("[CLIENT %v] Send request", clientID)
+	log.Debugf("[CLIENT %v] Send request: %v", clientID, msg)
 	//Step 1: Tell to server the Request Length and wait for Server Confirmation
 
 	data, err := communicator.sendAndWait(clientID, strconv.Itoa(msg_length), PREPARE_MSG_SIZE)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
+		log.Debugf("[CLIENT %v] Communication Error: %v", clientID, err.Error())
 		communicator.shutdown()
 		return "", err
 	}
@@ -92,38 +97,41 @@ func (communicator *Communicator) sendRequest(clientID string, msg string) (stri
 	//Step 2: Check Server Confirmation and send Request Message
 
 	if accepted_server_size_msg == msg_length {
-		log.Infof("[CLIENT %v] Im ok to send message data %s", clientID, msg)
+		log.Infof("[CLIENT %v] Im ok to send message data", clientID)
+		log.Debugf("[CLIENT %v] Im ok to send message data %s", clientID, msg)
 		data, err := communicator.sendAndWait(clientID, msg, msg_length)
 
 		if err != nil {
-			log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
+			log.Debugf("[CLIENT %v] Communication Error: %v", clientID, err.Error())
 			communicator.shutdown()
 			return "", err
 		}
 
-		log.Infof("[CLIENT %v] Request confirmation data %s", clientID, data)
+		log.Debugf("[CLIENT %v] Request confirmation data %s", clientID, data)
 
 		return data, nil
 
 	} else {
-		log.Infof("[CLIENT %v] I cant send message data %v to server", clientID, msg)
+		log.Infof("[CLIENT %v] I cant send message data to server", clientID)
+		log.Debugf("[CLIENT %v] I cant send message data %v to server", clientID, msg)
 		return "", errors.New("Cant send message data to server")
 	}
 }
 
 func (communicator *Communicator) getResponse(clientID string, request string, expectedResponseSize int) (string, error) {
-	log.Infof("[CLIENT %v] Get Response for request: %v and expected size %d", clientID, request, expectedResponseSize)
+	log.Infof("[CLIENT %v] Get Response", clientID)
+	log.Debugf("[CLIENT %v] Get Response for request: %v and expected size %d", clientID, request, expectedResponseSize)
 	//Step 3: Tell to server we want Response of the Request
 
-	data, err := communicator.sendAndWait(clientID, strconv.Itoa(RESPONSE_MSG), expectedResponseSize) //The client receives at most the same message
+	data, err := communicator.sendAndWait(clientID, strconv.Itoa(RESPONSE_MSG), expectedResponseSize)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
+		log.Debugf("[CLIENT %v] Communication Error: %v", clientID, err.Error())
 		communicator.shutdown()
 		return "", err
 	}
 
-	log.Infof("[CLIENT %v] Response data %s", clientID, data)
+	log.Debugf("[CLIENT %v] Response data %s", clientID, data)
 
 	return data, nil
 }
@@ -135,7 +143,7 @@ func (communicator *Communicator) endCommunication(clientID string) (string, err
 	end_connection_data, err := communicator.sendAndWait(clientID, strconv.Itoa(CLOSE_CONN_MSG), CLOSE_MSG_SIZE)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Communication Error: %v", clientID, err.Error())
+		log.Debugf("[CLIENT %v] Communication Error: %v", clientID, err.Error())
 		communicator.shutdown()
 		return "", err
 	}
@@ -154,30 +162,41 @@ func (communicator *Communicator) endCommunication(clientID string) (string, err
 }
 
 // Send message to server and waits for a response
-// If no response arrives at specefic time, throws TimeOut error
+// If no response arrives at specefic time, throws TimeOut error.
+// Else, return response
 func (communicator *Communicator) sendAndWait(clientID string, msg string, expectedResponseSize int) (string, error) {
-	log.Infof("[CLIENT %v] Send message: %v and wait: %v for response with size: %d", clientID, msg, communicator.communicationTO, expectedResponseSize)
+	log.Infof("[CLIENT %v] Send message and wait for response", clientID)
+	log.Debugf("[CLIENT %v] Send message: %v and wait: %v for response with size: %d", clientID, msg, communicator.communicationTO, expectedResponseSize)
 	readBuff := make([]byte, expectedResponseSize)
 	data := make([]byte, 0)
 
-	fmt.Fprintf(communicator.conn, "%s", msg)
-
-	log.Debugf("[CLIENT %v] Waiting response for message %v", clientID, msg)
-	communicator.conn.SetReadDeadline(time.Now().Add(communicator.communicationTO))
-
-	n, err := communicator.conn.Read(readBuff)
+	sendMsg := fmt.Sprintf("%s", msg)
+	bytesWrited, err := communicator.conn.Write([]byte(sendMsg))
+	log.Debugf("[CLIENT %v] Bytes writed %v", clientID, bytesWrited)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Read error: %s", clientID, err.Error())
+		log.Debugf("[CLIENT %v] Write error: %s", clientID, err.Error())
 		communicator.shutdown()
 		return "", err
 	}
 
-	data = append(data, readBuff[:n]...)
+	log.Debugf("[CLIENT %v] Waiting response for message %v", clientID, msg)
+	communicator.conn.SetReadDeadline(time.Now().Add(communicator.communicationTO))
+
+	bytesReaded, err := communicator.conn.Read(readBuff)
+	log.Debugf("[CLIENT %v] Bytes readed %v", clientID, bytesReaded)
+
+	if err != nil {
+		log.Debugf("[CLIENT %v] Read error: %s", clientID, err.Error())
+		communicator.shutdown()
+		return "", err
+	}
+
+	data = append(data, readBuff[:bytesReaded]...)
 
 	responseMsg := string(data)
 
-	log.Infof("[CLIENT %v] Response Message from server: %v", clientID, responseMsg)
+	log.Debugf("[CLIENT %v] Response Message from server: %v", clientID, responseMsg)
 	return responseMsg, nil
 }
 

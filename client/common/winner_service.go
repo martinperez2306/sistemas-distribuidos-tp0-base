@@ -10,6 +10,8 @@ import (
 const FILE_MSG_SEPARATOR string = ","
 const SERVER_MSG_SEPARATOR string = "_"
 
+const PLAYER_DATA_SIZE = 4
+
 type WinnerService struct {
 }
 
@@ -43,8 +45,10 @@ func (winnerService *WinnerService) validatePlayerList(playerList []string) []Pl
 	var players []Player
 	for _, playerLine := range playerList {
 		playerData := strings.Split(playerLine, FILE_MSG_SEPARATOR)
-		player := NewPlayer(playerData[0], playerData[1], playerData[2], playerData[3])
-		players = append(players, player)
+		if len(playerData) == PLAYER_DATA_SIZE {
+			player := NewPlayer(playerData[0], playerData[1], playerData[2], playerData[3])
+			players = append(players, player)
+		}
 	}
 	return players
 }
