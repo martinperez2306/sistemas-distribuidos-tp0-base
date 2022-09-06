@@ -54,8 +54,8 @@ class Communicator:
         """
         try:
             if(self._client_socket is not None):
-                msg_size = self.__receive(PREPARE_MSG_SIZE)
-                self.__respond(msg_size, None)
+                msg_bytes = self.__receive(PREPARE_MSG_SIZE)
+                self.__respond(msg_bytes.decode('utf-8'), None)
         except ValueError as error:
             logging.info("Error while reading client message {}. Error: {}".format(self._client_socket, error))
             self.end_communication()
@@ -109,16 +109,28 @@ class Communicator:
             self.__respond_and_wait(len(request), winners_msg, RESPONSE_MSG_SIZE)
             
     def __respond_and_wait(self, request, response, expected_response_size):
+        """
+            Responde with a message and waits for other response.
+            If request is RESPONSE_MSG_CODE send the response.
+            Else send the request.
+        """
         msg = request
         if(request == RESPONSE_MSG_CODE):
             msg = response
         logging.info('Respond to client {} with {} and wait.'
                     .format(self._client_socket.getpeername(), msg))
         self.__send(msg)
-        response_msg = self.__receive(expected_response_size)
+
+        msg_bytes = self.__receive(expected_response_size)
+        response_msg = msg_bytes.decode('utf-8')
         self.__respond(response_msg, response)
 
-    def __respond_and_continue(self, request, response): 
+    def __respond_and_continue(self, request, response):
+        """
+            Responde with a message and continue.
+            If request is RESPONSE_MSG_CODE send the response.
+            Else send the request.
+        """ 
         msg = request
         if(request == RESPONSE_MSG_CODE):
             msg = response
@@ -143,10 +155,9 @@ class Communicator:
                     self._client_socket.setblocking(False)
             except socket.error:
                 pass
-            recived = data.decode('utf-8')
             logging.info('Recived data {}: {}'
-                    .format(self._client_socket.getpeername(), len(recived)))
-            return recived
+                    .format(self._client_socket.getpeername(), len(data)))
+            return data
 
     def __send(self, msg):
         """
