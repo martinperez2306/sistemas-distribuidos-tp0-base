@@ -3,6 +3,7 @@ package common
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"time"
@@ -212,12 +213,18 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 		log.Debugf("[CLIENT %v] Bytes readed %v", clientID, bytesReaded)
 		if err != nil {
 			log.Debugf("[CLIENT %v] Read error: %s", clientID, err.Error())
-			communicator.shutdown()
-			return "", err
+			if err != io.EOF {
+				communicator.shutdown()
+				return "", err
+			} else {
+				break
+			}
 		}
 		allBytes += bytesReaded
 		data = append(data, readBuff[:bytesReaded]...)
 	}
+
+	log.Debugf("[CLIENT %v] All Bytes readed %v", clientID, allBytes)
 
 	responseMsg := string(data)
 
