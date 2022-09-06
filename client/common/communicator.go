@@ -3,7 +3,6 @@ package common
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"strconv"
 	"time"
@@ -22,7 +21,7 @@ const PREPARE_MSG_SIZE = 12
 const RESPONSE_MSG_SIZE = 13
 const CLOSE_MSG_SIZE = 13
 
-const MAX_BUFF_SIZE = 2048 //TODO
+const BUFF_SIZE = 4096
 
 // Communicator Entity
 type Communicator struct {
@@ -204,7 +203,7 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 	log.Debugf("[CLIENT %v] Waiting response for message %v", clientID, msg)
 	communicator.conn.SetReadDeadline(time.Now().Add(communicator.communicationTO))
 
-	readBuff := make([]byte, expectedResponseSize)
+	readBuff := make([]byte, BUFF_SIZE)
 	data := make([]byte, 0)
 	allBytes := 0
 
@@ -212,12 +211,9 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 		bytesReaded, err := communicator.conn.Read(readBuff)
 		log.Debugf("[CLIENT %v] Bytes readed %v", clientID, bytesReaded)
 		if err != nil {
-			if err != io.EOF {
-				log.Debugf("[CLIENT %v] Read error: %s", clientID, err.Error())
-				//communicator.shutdown()
-				//return "", err
-			}
-			break
+			log.Debugf("[CLIENT %v] Read error: %s", clientID, err.Error())
+			communicator.shutdown()
+			return "", err
 		}
 		allBytes += bytesReaded
 		data = append(data, readBuff[:bytesReaded]...)
