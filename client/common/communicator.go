@@ -212,8 +212,8 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 		bytesReaded, err := communicator.conn.Read(readBuff)
 		log.Debugf("[CLIENT %v] Bytes readed %v", clientID, bytesReaded)
 		if err != nil {
-			log.Debugf("[CLIENT %v] Read error: %s", clientID, err.Error())
 			if err != io.EOF {
+				log.Debugf("[CLIENT %v] Read error: %s", clientID, err.Error())
 				communicator.shutdown()
 				return "", err
 			}
