@@ -216,8 +216,6 @@ func (communicator *Communicator) sendAndWait(clientID string, msg string, expec
 			if err != io.EOF {
 				communicator.shutdown()
 				return "", err
-			} else {
-				break
 			}
 		}
 		allBytes += bytesReaded

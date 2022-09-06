@@ -188,6 +188,7 @@ class Communicator:
         """
         logging.info('Sending len data: {}'.format(len(msg)))
         if(self._client_socket is not None):
+            self._client_socket.setblocking(True)
             self._client_socket.sendall(msg)
 
     def end_communication(self):
