@@ -3,7 +3,7 @@ import socket
 import logging
 import threading
 
-from .winner_service import WinnerService
+from .winners_controller import WinnersController
 
 PREPARE_MSG_SIZE = 12
 RESPONSE_MSG_SIZE = 13
@@ -23,7 +23,7 @@ class Communicator:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self._winner_service = WinnerService()
+        self._winner_controller = WinnersController()
         self._client_socket_semaphore = Semaphore(1)
         self._client_sockets = list()
 
@@ -104,7 +104,7 @@ class Communicator:
         logging.debug('Data received from connection {}. Data: {}'.format(client_socket.getpeername(), request_msg))
         recived_len = str(len(request))
         logging.info('Send recv ok to connection {}. Recived: {}'.format(client_socket.getpeername(), recived_len))
-        winners_msg = self._winner_service.get_winners_response(request_msg)
+        winners_msg = self._winner_controller.handle_request(request_msg)
         self.__respond_and_wait(client_socket, request, RESPONSE_MSG_SIZE)
         return winners_msg.encode(ENCODING)
 
