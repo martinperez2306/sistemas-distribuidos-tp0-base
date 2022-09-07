@@ -95,34 +95,28 @@ class Communicator:
         if (req_is_number):
             request_size = int(request)
             if (request_msg == CLOSE_CONN_CODE):
-                logging.info(
-                        'Message Size received from connection {}. Request Size: {}. Its time to close connection'
+                logging.info('Message Size received from connection {}. Request Size: {}. Its time to close connection'
                         .format(client_socket.getpeername(), request_size))
                 self.__respond_and_continue(client_socket, request, response)
 
             elif (request_msg == RESPONSE_MSG_CODE):
                 winners_size = len(response)
-                logging.info(
-                        'Message Size received from connection {}. Request Size: {}. Telling client response size.'
+                logging.info('Message Size received from connection {}. Request Size: {}. Telling client response size.'
                         .format(client_socket.getpeername(), request_size))
-                logging.debug(
-                            'Send winners size to connection {}. Winners Size: {}'
+                logging.debug('Send winners size to connection {}. Winners Size: {}'
                             .format(client_socket.getpeername(), winners_size))
                 winners_size_req = str(winners_size).zfill(RESPONSE_MSG_SIZE).encode('utf-8')
                 self.__respond_and_wait(client_socket, winners_size_req, response, RESPONSE_MSG_SIZE)
 
             elif (request_msg == SEND_RESPONSE_MSG_CODE):
-                logging.info(
-                        'Message Size received from connection {}. Request Size: {}. Im ok to response data.'
+                logging.info('Message Size received from connection {}. Request Size: {}. Im ok to response data.'
                         .format(client_socket.getpeername(), request_size))
-                logging.debug(
-                            'Send winners to connection {}. Winners: {}'
+                logging.debug('Send winners to connection {}. Winners: {}'
                             .format(client_socket.getpeername(), response_msg))
                 self.__respond_and_wait(client_socket, request, response, CLOSE_CONN_SIZE)
 
             else:
-                logging.info(
-                        'Message Size received from connection {}. Request Size: {}. Im ok to receive data.'
+                logging.info('Message Size received from connection {}. Request Size: {}. Im ok to receive data.'
                         .format(client_socket.getpeername(), request_size))
                 self.__respond_and_wait(client_socket, request, response, request_size)
                 
@@ -130,14 +124,11 @@ class Communicator:
             if not request_msg:
                 return
             recived_len = str(len(request))
-            logging.info(
-                        'Data received from connection {}.'
+            logging.info('Data received from connection {}.'
                         .format(client_socket.getpeername()))
-            logging.debug(
-                        'Data received from connection {}. Data: {}'
+            logging.debug('Data received from connection {}. Data: {}'
                         .format(client_socket.getpeername(), request_msg))
-            logging.info(
-                        'Send recv ok to client {}. Recived: {}'
+            logging.info('Send recv ok to client {}. Recived: {}'
                         .format(client_socket.getpeername(), recived_len))
             winners_msg = self._winner_service.get_winners_response(request_msg)
             winners = winners_msg.encode('utf-8')

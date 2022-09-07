@@ -5,6 +5,9 @@ import datetime
 """ Winners storage location. """
 STORAGE = "./winners"
 
+CONTESTANT_SEPARATOR = "_"
+
+CONTESTANT_BIRTHDATE_FORMAT = "%Y-%m-%d"
 
 """ Contestant data model. """
 class Contestant:
@@ -18,6 +21,11 @@ class Contestant:
 	def __hash__(self):
 		return hash((self.first_name, self.last_name, self.document, self.birthdate))
 
+	def to_string(self):
+		return self.first_name + CONTESTANT_SEPARATOR + self.last_name + CONTESTANT_SEPARATOR + self.document + CONTESTANT_SEPARATOR + self.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)
+
+
+
 
 """ Checks whether a contestant is a winner or not. """
 def is_winner(contestant: Contestant) -> bool:
@@ -27,7 +35,7 @@ def is_winner(contestant: Contestant) -> bool:
 
 
 """ Persist the information of each winner in the STORAGE file. Not thread-safe/process-safe. """
-def persist_winners(winners: list[Contestant]) -> None:
+def persist_winners(winners: 'list[Contestant]') -> None:
 	with open(STORAGE, 'a+') as file:
 		for winner in winners:
 			file.write(f'Full name: {winner.first_name} {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime("%d/%m/%Y")}\n')
