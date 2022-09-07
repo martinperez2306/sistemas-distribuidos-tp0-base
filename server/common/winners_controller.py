@@ -2,7 +2,7 @@ import re
 import logging
 from .winners_service import WinnerService
 
-REQUEST_ID_REGEX=r'REQUEST_ID\[(.*?)\]'
+REQUEST_NAME_REGEX=r'REQUEST_NAME\[(.*?)\]'
 REQUEST_BODY_REGEX=r'REQUEST_BODY\[(.*?)\]'
 
 GET_WINNERS = "GET_WINNERS"
@@ -24,7 +24,7 @@ class WinnersController:
             return None
 
     def __parse_request(self, request: str):
-        request_id = re.search(REQUEST_ID_REGEX,request).group(1)
+        request_id = re.search(REQUEST_NAME_REGEX,request).group(1)
         request_body = re.search(REQUEST_BODY_REGEX,request).group(1)
         return request_id, request_body
 
