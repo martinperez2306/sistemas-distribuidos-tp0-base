@@ -1,4 +1,3 @@
-import time
 import datetime
 
 
@@ -23,8 +22,6 @@ class Contestant:
 
 	def to_string(self):
 		return self.first_name + CONTESTANT_SEPARATOR + self.last_name + CONTESTANT_SEPARATOR + self.document + CONTESTANT_SEPARATOR + self.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)
-
-
 
 
 """ Checks whether a contestant is a winner or not. """

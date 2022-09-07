@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+const REQUEST_CLIENT_FORMAT = "REQUEST_CLI[%s]"
 const REQUEST_NAME_FORMAT = "REQUEST_NAME[%s]"
 const REQUEST_BODY_FORMAT = "REQUEST_BODY[%s]"
 
@@ -26,10 +27,12 @@ func (winnersClient *WinnersClient) getWinners(communicator *Communicator, clien
 }
 
 func (winnersClient *WinnersClient) getRequestMessage(id string, body string) string {
-	requestId := fmt.Sprintf(REQUEST_NAME_FORMAT, id)
+	requestClient := fmt.Sprintf(REQUEST_CLIENT_FORMAT, id)
+	requestName := fmt.Sprintf(REQUEST_NAME_FORMAT, id)
 	requestBody := fmt.Sprintf(REQUEST_BODY_FORMAT, body)
 	var buffer bytes.Buffer
-	buffer.WriteString(requestId)
+	buffer.WriteString(requestClient)
+	buffer.WriteString(requestName)
 	buffer.WriteString(requestBody)
 	return buffer.String()
 }
