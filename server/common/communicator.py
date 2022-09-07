@@ -200,6 +200,7 @@ class Communicator:
             Release client socket resources and close it
         """
         if(client_socket is not None):
+            logging.info('Closing connection: {}'.format(client_socket.getpeername()))
             client_socket.close()
         client_socket = None
 
