@@ -9,16 +9,19 @@ import (
 
 const FILE_PLAYER_DATA_SEPARATOR string = ","
 const SERVER_PLAYER_DATA_SEPARATOR string = "_"
-const PLAYER_SEPARATOR = "\n"
+const PLAYER_SEPARATOR = "&"
 
 const PLAYER_DATA_SIZE = 4
 
 type WinnerService struct {
+	winnersClient *WinnersClient
 }
 
-// NewPlayer Initializes a new Winner Service
+// NewWinnerService Initializes a new Winner Service
 func NewWinnerService() *WinnerService {
-	winnerService := &WinnerService{}
+	winnerService := &WinnerService{
+		winnersClient: NewWinnersClient(),
+	}
 	return winnerService
 }
 
@@ -28,7 +31,7 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 	players := winnerService.validatePlayerList(playerList)
 	msg := winnerService.getPlayersMsg(players)
 
-	data, err := communicator.request(clientID, msg)
+	data, err := winnerService.winnersClient.getWinners(communicator, clientID, msg)
 
 	if err != nil {
 		log.Infof("[CLIENT %v] Cant check winner: %v", clientID, err)
