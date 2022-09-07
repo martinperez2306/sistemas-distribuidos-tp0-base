@@ -29,6 +29,66 @@ services:
       - "./config/client:/config"
       - "./.data:/.data"
 
+  client2:
+    container_name: client2
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=2
+      - CLI_SERVER_ADDRESS=server:12345
+    networks:
+      - testing_net
+    depends_on:
+      - server
+    volumes:
+      - "./config/client:/config"
+      - "./.data:/.data"
+
+  client3:
+    container_name: client3
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=3
+      - CLI_SERVER_ADDRESS=server:12345
+    networks:
+      - testing_net
+    depends_on:
+      - server
+    volumes:
+      - "./config/client:/config"
+      - "./.data:/.data"
+
+  client4:
+    container_name: client4
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=4
+      - CLI_SERVER_ADDRESS=server:12345
+    networks:
+      - testing_net
+    depends_on:
+      - server
+    volumes:
+      - "./config/client:/config"
+      - "./.data:/.data"
+
+  client5:
+    container_name: client5
+    image: client:latest
+    entrypoint: /client
+    environment:
+      - CLI_ID=5
+      - CLI_SERVER_ADDRESS=server:12345
+    networks:
+      - testing_net
+    depends_on:
+      - server
+    volumes:
+      - "./config/client:/config"
+      - "./.data:/.data"
+
 networks:
   testing_net:
     ipam:
