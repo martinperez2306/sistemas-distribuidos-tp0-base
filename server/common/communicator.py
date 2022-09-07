@@ -1,3 +1,4 @@
+from multiprocessing import Semaphore
 import socket
 import logging
 import threading
@@ -21,6 +22,8 @@ class Communicator:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._winner_service = WinnerService()
+        self._client_socket_semaphore = Semaphore(1)
+        self._client_sockets = list()
 
     def handle_communication(self):
         client_socket = self.__accept_new_connection()
@@ -58,16 +61,24 @@ class Communicator:
         if(client_socket is not None):
             logging.info("Handling client connection {}".format(client_socket))
             try:
+                self.__init_connection(client_socket)
                 request = self.__receive(client_socket, PREPARE_MSG_SIZE)
                 self.__respond(client_socket, request, None)
             except ValueError as error:
                 logging.info("Error while reading client message {}. Error: {}".format(client_socket, error))
-                self.end_communication(client_socket)
+                self.__end_connection(client_socket)
             except OSError as error:
                 logging.info("Error while reading client socket {}. Error: {}".format(client_socket, error))
-                self.end_communication(client_socket)
+                self.__end_connection(client_socket)
             finally:
-                self.end_communication(client_socket)
+                self.__end_connection(client_socket)
+
+    def __init_connection(self, client_socket: socket):
+        if(client_socket is not None):
+            logging.info('Init Connection: {}'.format(client_socket.getpeername()))
+            self._client_socket_semaphore.acquire()
+            self._client_sockets.append(client_socket)
+            self._client_socket_semaphore.release()
 
     def __respond(self, client_socket: socket, request: bytes, response: bytes):
         request_msg: str = request.decode('utf-8')
@@ -194,17 +205,18 @@ class Communicator:
             client_socket.setblocking(True)
             client_socket.sendall(msg)
 
-    def end_communication(self, client_socket):
+    def __end_connection(self, client_socket):
         """
-            Finish the communication with client.
+            Finish the connection with client.
             Release client socket resources and close it
         """
         if(client_socket is not None):
-            logging.info('Closing connection: {}'.format(client_socket.getpeername()))
+            logging.info('End connection: {}'.format(client_socket.getpeername()))
+            self._client_socket_semaphore.acquire()
+            self._client_sockets = list(filter(lambda c: c.getpeername()[0] != client_socket.getpeername()[0] and c.getpeername()[1] != client_socket.getpeername()[1], self._client_sockets))
             client_socket.close()
-        client_socket = None
+            self._client_socket_semaphore.release()
 
-    
     def turn_off(self):
         """
             Turn off Communicator.
