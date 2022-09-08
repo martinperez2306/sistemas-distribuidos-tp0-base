@@ -14,22 +14,18 @@ class WinnersRepository:
         logging.debug("Save {} winners".format(len(winners)))
         if winners:
             self._winners_semaphore.acquire()
-            self._processing_winners = True
             persist_winners(winners)
             self._winners_semaphore.release()
-            self._processing_winners = False
 
     def get_all_winners(self) -> 'list[Contestant]':
         logging.info("Get all winners")
         self._winners_semaphore.acquire()
-        self._processing_winners = True
         file = open(STORAGE, 'r')
         lines = file.readlines()
         contestants = list()
         for line in lines:
             contestants.append(self.__get_contestant_from_line(line))
         self._winners_semaphore.release()
-        self._processing_winners = False
         return contestants
 
     def __get_contestant_from_line(self, line: str) -> Contestant:
@@ -43,6 +39,3 @@ class WinnersRepository:
 
     def __get_contestant_data_from_line(self, contestant_data: str) -> str:
         return contestant_data.split(":")[1].strip()
-
-    def processing_winners(self) -> bool:
-        return self._processing_winners
