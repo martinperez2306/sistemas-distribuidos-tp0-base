@@ -44,12 +44,12 @@ func NewCommunicator(config ClientConfig) *Communicator {
 // CreateClientSocket Initializes client socket. In case of
 // failure, error is printed in stdout/stderr and exit 1
 // is returned
-func (communicator *Communicator) createClientSocket(client Client) error {
-	conn, err := net.Dial("tcp", client.config.ServerAddress)
+func (communicator *Communicator) createClientSocket(clientID string) error {
+	conn, err := net.Dial("tcp", communicator.serverAddress)
 	if err != nil {
 		log.Fatalf(
 			"[CLIENT %v] Could not connect to server. Error: %v",
-			client.config.ID,
+			clientID,
 			err,
 		)
 	}
@@ -61,6 +61,8 @@ func (communicator *Communicator) createClientSocket(client Client) error {
 // Request needs a message. The response is string.
 // If any error occurs then return it.
 func (communicator *Communicator) request(clientID string, msg string) (string, error) {
+	communicator.createClientSocket(clientID)
+
 	server_recived_data_size, req_err := communicator.sendRequest(clientID, msg)
 	if req_err != nil {
 		return "", req_err

@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -12,6 +13,11 @@ const SERVER_PLAYER_DATA_SEPARATOR string = "_"
 const PLAYER_SEPARATOR = "&"
 
 const PLAYER_DATA_SIZE = 4
+
+const AGENCIES_WINNERS_PENDING = "PROCESS_PENDING"
+const AGENCIES_WINNERS_COMPLETE = "PROCESS_FINISH"
+
+const TIME_TO_TRY = 60 * time.Second
 
 type WinnerService struct {
 	winnersClient *WinnersClient
@@ -34,7 +40,7 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 	data, err := winnerService.winnersClient.getWinners(communicator, clientID, msg)
 
 	if err != nil {
-		log.Infof("[CLIENT %v] Cant check winner: %v", clientID, err)
+		log.Infof("[CLIENT %v] Cant check winners: %v", clientID, err)
 		return
 	}
 
@@ -50,6 +56,35 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 	}
 
 	log.Infof("[CLIENT %v] %v %% winners", clientID, winnersPercentaje)
+}
+
+func (winnerService *WinnerService) checkAgenciesWinners(communicator *Communicator, clientID string) {
+	agenciesWinnerProcess := AGENCIES_WINNERS_PENDING
+	for agenciesWinnerProcess == AGENCIES_WINNERS_PENDING {
+		log.Infof("[CLIENT %v] Check agencies winners", clientID)
+		data, err := winnerService.winnersClient.getAgenciesWinners(communicator, clientID)
+
+		if err != nil {
+			log.Infof("[CLIENT %v] Cant check agencies winners: %v", clientID, err)
+			return
+		}
+
+		log.Infof("[CLIENT %v] Agencies Winner Data: %s", clientID, data)
+		agenciesData := strings.Split(data, PLAYER_SEPARATOR)
+
+		if agenciesData[0] == AGENCIES_WINNERS_COMPLETE {
+			log.Infof("[CLIENT %v] Agencies winners process is complete", clientID)
+			_, agencies := agenciesData[0], agenciesData[1:]
+			for agency := range agencies {
+				agencyData := strings.Split(agencies[agency], SERVER_PLAYER_DATA_SEPARATOR)
+				log.Infof("[CLIENT %v] Agency %v has %v winners", clientID, agencyData[0], agencyData[1])
+			}
+		} else {
+			log.Infof("[CLIENT %v] Agencies winners process is pending. Waiting %v and try againg", clientID, TIME_TO_TRY)
+			time.Sleep(TIME_TO_TRY)
+		}
+		agenciesWinnerProcess = agenciesData[0]
+	}
 }
 
 func (winnerService *WinnerService) validatePlayerList(playerList []string) []Player {

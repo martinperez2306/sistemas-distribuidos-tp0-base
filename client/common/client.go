@@ -46,6 +46,7 @@ func (client *Client) StartClient() {
 	filepath = filepath + filename
 	log.Infof("[CLIENT %v] Read file %s", client.config.ID, filepath)
 
+	go client.gracefulShutdown()
 	playerLines, err := client.getLinesFromFile(filepath)
 
 	if err != nil {
@@ -53,13 +54,9 @@ func (client *Client) StartClient() {
 		os.Exit(0)
 	}
 
-	// Create the connection the server
-	// Send Player data to verify winner
-	client.communicator.createClientSocket(*client)
-
-	go client.gracefulShutdown()
-
 	client.winnerService.checkWinners(client.communicator, client.config.ID, playerLines)
+
+	client.winnerService.checkAgenciesWinners(client.communicator, client.config.ID)
 }
 
 func (client *Client) getLinesFromFile(filepath string) ([]string, error) {

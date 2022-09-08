@@ -26,6 +26,11 @@ func (winnersClient *WinnersClient) getWinners(communicator *Communicator, clien
 	return communicator.request(clientID, getWinnersMessage)
 }
 
+func (winnersClient *WinnersClient) getAgenciesWinners(communicator *Communicator, clientID string) (string, error) {
+	getWinnersMessage := winnersClient.getRequestMessage(clientID, GET_AGENCIES_WINNERS, " ")
+	return communicator.request(clientID, getWinnersMessage)
+}
+
 func (winnersClient *WinnersClient) getRequestMessage(client string, name string, body string) string {
 	requestClient := fmt.Sprintf(REQUEST_CLIENT_FORMAT, client)
 	requestName := fmt.Sprintf(REQUEST_NAME_FORMAT, name)

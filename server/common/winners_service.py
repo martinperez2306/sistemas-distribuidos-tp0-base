@@ -18,26 +18,29 @@ class WinnersService:
     def get_winners_response(self, client: str, players_msg: str) -> str:
         logging.info("Get winners response")
         logging.debug("Get winners response. Client: {}. Players Message: {}".format(client, players_msg))
+        self._winners_track.track_init_process(client)
         contestants = self.__get_contestants_from_message(client, players_msg)
         winners = self.__get_winners(contestants)
         logging.debug("Get winners response. Winners: {}".format(winners))
         self._winners_repository.save_winners(winners)
         response = self.__get_winners_string(winners)
+        self._winners_track.track_finish_process(client)
         logging.info("Get winners response. Response: {}".format(response))
         return response
 
     def get_agencies_winners_response(self, client: str) -> str:
         logging.info("Get winners by agency response")
         logging.debug("Get winners by agency response. Client: {}".format(client))
-        response = "PROCESSING_PENDING_"
+        response = "PROCESS_PENDING&"
         processing_pending_count = self._winners_track.get_pending_process_count()
         if (processing_pending_count == 0):
             all_winners = self._winners_repository.get_all_winners()
             agencies = list()
+            logging.debug("Max Clients Tracked: {}".format(self._winners_track.get_max_clients_tracked()))
             for agency_id in range(self._winners_track.get_max_clients_tracked()):
-                agency_winners = filter(lambda w: w.agency == agency_id, all_winners)
+                agency_winners = list(filter(lambda w: w.agency == agency_id, all_winners))
                 agencies.append(Agency(agency_id, agency_winners))
-            response = self.__get_agencies_string(all_winners)
+            response = "PROCESS_FINISH&" + self.__get_agencies_string(agencies)
         else:
             response += str(processing_pending_count)
         logging.info("Get all winners response. Response: {}".format(response))
@@ -73,7 +76,7 @@ class WinnersService:
         return None
 
     def __get_winners(self, contestants: 'list[Contestant]'):
-        logging.info("Get winners.")
+        logging.info("Get winners")
         winner_list = []
         for contestant in contestants:
             is_player_winner = False
@@ -88,6 +91,7 @@ class WinnersService:
         for winner in winners:
             string += winner.to_string()
             string += BATCH_SEPARATOR
+        string = string[:-1]
         if not winners:
             string = "empty"
         return string
@@ -97,5 +101,6 @@ class WinnersService:
         for agency in agencies:
             string += agency.to_string()
             string += BATCH_SEPARATOR
+        string = string[:-1]
         return string
 

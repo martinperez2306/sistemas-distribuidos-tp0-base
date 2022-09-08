@@ -20,7 +20,7 @@ class WinnersController:
         if (request_parsed[1] == GET_WINNERS):
             return self.__get_winners(request_parsed[0], request_parsed[2])
         elif (request_parsed[1] == GET_AGENCIES_WINNERS):
-            return self.__get_all_winners(request_parsed[0])
+            return self.__get_agencies_winners(request_parsed[0])
         else:
             return None
 
