@@ -5,7 +5,7 @@ from .winners_track import WinnersTrack
 from .winners_repository import WinnersRepository
 from .utils import *
 
-BATCH_SEPARATOR = "&"
+ENTITY_SEPARATOR = "&"
 
 PLAYER_DATA_SIZE = 4
 
@@ -59,11 +59,11 @@ class WinnersService:
         return contestant_list
 
     def __parse_batch_message(self, batch_message: str) -> 'list[str]':
-        return batch_message.split(BATCH_SEPARATOR)
+        return batch_message.split(ENTITY_SEPARATOR)
 
 
     def __parse_contestant_message(self, client, player_message: str):
-        split = player_message.split(CONTESTANT_SEPARATOR)
+        split = player_message.split(MODEL_DATA_SEPARATOR)
         if (len(split) == PLAYER_DATA_SIZE):
             first_name = split[0]
             last_name = split[1]
@@ -91,7 +91,7 @@ class WinnersService:
         string = ""
         for winner in winners:
             string += winner.to_string()
-            string += BATCH_SEPARATOR
+            string += ENTITY_SEPARATOR
         string = string[:-1]
         if not winners:
             string = "empty"
@@ -101,7 +101,7 @@ class WinnersService:
         string = ""
         for agency in agencies:
             string += agency.to_string()
-            string += BATCH_SEPARATOR
+            string += ENTITY_SEPARATOR
         string = string[:-1]
         return string
 

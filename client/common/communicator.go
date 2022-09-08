@@ -31,7 +31,7 @@ type Communicator struct {
 	communicationTO time.Duration
 }
 
-// NewCommunicator Initializes a new comminictor receiving the configuration
+// NewCommunicator Initializes a new Communicator receiving the configuration
 // as a parameter
 func NewCommunicator(config ClientConfig) *Communicator {
 	communicator := &Communicator{
@@ -128,6 +128,8 @@ func (communicator *Communicator) sendRequest(clientID string, msg string) (int,
 	}
 }
 
+// Get server response of the request
+// Returns the response recived by server
 func (communicator *Communicator) getResponse(clientID string, request string, expectedResponseSize int) (string, error) {
 	log.Infof("[CLIENT %v] Get Response", clientID)
 	log.Debugf("[CLIENT %v] Get Response for request: %v and expected size %d", clientID, request, expectedResponseSize)
@@ -144,7 +146,7 @@ func (communicator *Communicator) getResponse(clientID string, request string, e
 
 	log.Debugf("[CLIENT %v] Response data %s", clientID, data)
 
-	//Step 5: Server tell me response size that we want to receive
+	//Step 4: Server tell me response size that we want to receive
 
 	response_msg_size, _ := strconv.Atoi(data)
 
@@ -161,6 +163,8 @@ func (communicator *Communicator) getResponse(clientID string, request string, e
 	return response, nil
 }
 
+// Ends communication with server
+// Returns the end communication message recived by server
 func (communicator *Communicator) endCommunication(clientID string) (string, error) {
 	//Step 5: Tell the server to end the communication. It will be notified with a message size equal to zero.
 

@@ -10,12 +10,12 @@ const REQUEST_NAME_FORMAT = "REQUEST_NAME[%s]"
 const REQUEST_BODY_FORMAT = "REQUEST_BODY[%s]"
 
 const GET_WINNERS = "GET_WINNERS"
-const GET_AGENCIES_WINNERS = "GET_AGENCIES_WINNERS"
+const GET_AGENCIES = "GET_AGENCIES"
 
 type WinnersClient struct {
 }
 
-// NewWinnerService Initializes a new Winners Client
+// NewWinnersClient Initializes a new Winners Client
 func NewWinnersClient() *WinnersClient {
 	winnersClient := &WinnersClient{}
 	return winnersClient
@@ -27,7 +27,7 @@ func (winnersClient *WinnersClient) getWinners(communicator *Communicator, clien
 }
 
 func (winnersClient *WinnersClient) getAgenciesWinners(communicator *Communicator, clientID string) (string, error) {
-	getWinnersMessage := winnersClient.getRequestMessage(clientID, GET_AGENCIES_WINNERS, " ")
+	getWinnersMessage := winnersClient.getRequestMessage(clientID, GET_AGENCIES, " ")
 	return communicator.request(clientID, getWinnersMessage)
 }
 

@@ -13,9 +13,10 @@ import (
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
-	ID              string
-	ServerAddress   string
-	CommunicationTO time.Duration
+	ID                   string
+	ServerAddress        string
+	CommunicationTO      time.Duration
+	ClientRetryInSeconds time.Duration
 }
 
 // Client Entity
@@ -29,7 +30,7 @@ type Client struct {
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	communicator := NewCommunicator(config)
-	winnerService := NewWinnerService()
+	winnerService := NewWinnerService(config)
 	client := &Client{
 		config:        config,
 		communicator:  communicator,
@@ -59,6 +60,7 @@ func (client *Client) StartClient() {
 	client.winnerService.checkAgenciesWinners(client.communicator, client.config.ID)
 }
 
+// Get all lines of file
 func (client *Client) getLinesFromFile(filepath string) ([]string, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -74,6 +76,9 @@ func (client *Client) getLinesFromFile(filepath string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
+// Catch signal and stop gracefully the client:
+//   - Stop connection
+//   - Return exit code 0
 func (client *Client) gracefulShutdown() {
 	exit := make(chan os.Signal, 1)
 	// catch SIGETRM or SIGINTERRUPT

@@ -5,11 +5,10 @@ import time
 """ Winners storage location. """
 STORAGE = "./winners"
 
-CONTESTANT_SEPARATOR = "_"
-
 CONTESTANT_BIRTHDATE_FORMAT = "%Y-%m-%d"
 
-CONTESTANT_DATA_SEPARATOR = "|"
+MODEL_DATA_SEPARATOR = "_"
+STORAGE_DATA_SEPARATOR = "|"
 
 """ Contestant data model. """
 class Contestant:
@@ -25,7 +24,7 @@ class Contestant:
 		return hash((self.first_name, self.last_name, self.document, self.birthdate))
 
 	def to_string(self):
-		return self.first_name + CONTESTANT_SEPARATOR + self.last_name + CONTESTANT_SEPARATOR + self.document + CONTESTANT_SEPARATOR + self.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)
+		return self.first_name + MODEL_DATA_SEPARATOR + self.last_name + MODEL_DATA_SEPARATOR + self.document + MODEL_DATA_SEPARATOR + self.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)
 
 
 """ Checks whether a contestant is a winner or not. """
@@ -41,10 +40,11 @@ def persist_winners(winners: 'list[Contestant]') -> None:
 		for winner in winners:
 			file.write(f'First name: {winner.first_name} | Last name: {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)} | Agency: {winner.agency}\n')
 
+""" Agency data model. """
 class Agency:
 	def __init__(self, id: str, winners: 'list[Contestant]'):
 		self.id = id
 		self.winners_count = len(winners)
 
 	def to_string(self):
-		return self.id + CONTESTANT_SEPARATOR + str(self.winners_count)
+		return self.id + MODEL_DATA_SEPARATOR + str(self.winners_count)

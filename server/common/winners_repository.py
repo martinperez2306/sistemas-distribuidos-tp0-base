@@ -29,7 +29,7 @@ class WinnersRepository:
         return contestants
 
     def __get_contestant_from_line(self, line: str) -> Contestant:
-        contestant_data = line.split(CONTESTANT_DATA_SEPARATOR)
+        contestant_data = line.split(STORAGE_DATA_SEPARATOR)
         first_name = self.__get_contestant_data_from_line(contestant_data[0])
         last_name = self.__get_contestant_data_from_line(contestant_data[1])
         document = self.__get_contestant_data_from_line(contestant_data[2])

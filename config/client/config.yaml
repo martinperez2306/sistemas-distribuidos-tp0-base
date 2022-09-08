@@ -1,7 +1,8 @@
-# id: 1
 server:
   address: "server:12345"
 communication:
   timeout: "120s"
+retry:
+  time: "60s"
 log:
   level: "info"

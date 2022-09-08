@@ -33,6 +33,7 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("id")
 	v.BindEnv("server", "address")
 	v.BindEnv("communication", "timeout")
+	v.BindEnv("retry", "time")
 	v.BindEnv("log", "level")
 
 	// Try to read configuration from config file. If config file
@@ -47,6 +48,11 @@ func InitConfig() (*viper.Viper, error) {
 	// Parse time.Duration variables and return an error if those variables cannot be parsed
 	if _, err := time.ParseDuration(v.GetString("communication.timeout")); err != nil {
 		return nil, errors.Wrapf(err, "Could not parse CLI_COMMUNICATION_TIMEOUT env var as time.Duration.")
+	}
+
+	// Parse time.Duration variables and return an error if those variables cannot be parsed
+	if _, err := time.ParseDuration(v.GetString("retry.time")); err != nil {
+		return nil, errors.Wrapf(err, "Could not parse CLI_RETRY_TIME env var as time.Duration.")
 	}
 
 	return v, nil
@@ -72,6 +78,7 @@ func PrintConfig(v *viper.Viper) {
 	logrus.Infof("Client ID: %s", v.GetString("id"))
 	logrus.Infof("Server Address: %s", v.GetString("server.address"))
 	logrus.Infof("Communication Timeout: %v", v.GetDuration("communication.timeout"))
+	logrus.Infof("Retry Time: %v", v.GetDuration("retry.time"))
 	logrus.Infof("Log Level: %v", v.GetDuration("log.level"))
 }
 
@@ -89,9 +96,10 @@ func main() {
 	PrintConfig(v)
 
 	clientConfig := common.ClientConfig{
-		ServerAddress:   v.GetString("server.address"),
-		ID:              v.GetString("id"),
-		CommunicationTO: v.GetDuration("communication.timeout"),
+		ServerAddress:        v.GetString("server.address"),
+		ID:                   v.GetString("id"),
+		CommunicationTO:      v.GetDuration("communication.timeout"),
+		ClientRetryInSeconds: v.GetDuration("retry.time"),
 	}
 
 	client := common.NewClient(clientConfig)

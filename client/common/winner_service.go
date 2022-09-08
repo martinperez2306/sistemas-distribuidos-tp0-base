@@ -8,34 +8,35 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const FILE_PLAYER_DATA_SEPARATOR string = ","
-const SERVER_PLAYER_DATA_SEPARATOR string = "_"
-const PLAYER_SEPARATOR = "&"
+const FILE_DATA_SEPARATOR = ","
+const SERVER_DATA_SEPARATOR = "_"
+const SERVER_ENTITY_SEPARATOR = "&"
 
 const PLAYER_DATA_SIZE = 4
 
 const AGENCIES_WINNERS_PENDING = "PROCESS_PENDING"
 const AGENCIES_WINNERS_COMPLETE = "PROCESS_FINISH"
 
-const TIME_TO_TRY = 60 * time.Second
-
 type WinnerService struct {
 	winnersClient *WinnersClient
+	retryTime     time.Duration
 }
 
 // NewWinnerService Initializes a new Winner Service
-func NewWinnerService() *WinnerService {
+func NewWinnerService(config ClientConfig) *WinnerService {
 	winnerService := &WinnerService{
 		winnersClient: NewWinnersClient(),
+		retryTime:     config.ClientRetryInSeconds,
 	}
 	return winnerService
 }
 
-// Check if Player is a Winner sending message to server with communicator
+// Check if Player is a Winner sending message to server
+// Logs Winners percentage or if no winners
 func (winnerService *WinnerService) checkWinners(communicator *Communicator, clientID string, playerList []string) {
 
-	players := winnerService.validatePlayerList(playerList)
-	msg := winnerService.getPlayersMsg(players)
+	players := winnerService.buildPlayerList(playerList)
+	msg := winnerService.buildPlayersMsg(players)
 
 	data, err := winnerService.winnersClient.getWinners(communicator, clientID, msg)
 
@@ -49,7 +50,7 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 		log.Infof("[CLIENT %v] No winners", clientID)
 	} else {
 		log.Infof("[CLIENT %v] Winners: %s", clientID, data)
-		winnersData := strings.Split(data, PLAYER_SEPARATOR)
+		winnersData := strings.Split(data, SERVER_ENTITY_SEPARATOR)
 		winnersFloat := float64(len(winnersData))
 		playersFloat := float64(len(players))
 		winnersPercentaje = winnersFloat / playersFloat
@@ -58,6 +59,8 @@ func (winnerService *WinnerService) checkWinners(communicator *Communicator, cli
 	log.Infof("[CLIENT %v] %v %% winners", clientID, winnersPercentaje)
 }
 
+// Check if Player is a Winner sending message to server
+// Logs Winners percentage or if no winners
 func (winnerService *WinnerService) checkAgenciesWinners(communicator *Communicator, clientID string) {
 	agenciesWinnerProcess := AGENCIES_WINNERS_PENDING
 	for agenciesWinnerProcess == AGENCIES_WINNERS_PENDING {
@@ -70,27 +73,28 @@ func (winnerService *WinnerService) checkAgenciesWinners(communicator *Communica
 		}
 
 		log.Infof("[CLIENT %v] Agencies Winner Data: %s", clientID, data)
-		agenciesData := strings.Split(data, PLAYER_SEPARATOR)
+		agenciesData := strings.Split(data, SERVER_ENTITY_SEPARATOR)
 
 		if agenciesData[0] == AGENCIES_WINNERS_COMPLETE {
 			log.Infof("[CLIENT %v] Agencies winners process is complete", clientID)
 			_, agencies := agenciesData[0], agenciesData[1:]
 			for agency := range agencies {
-				agencyData := strings.Split(agencies[agency], SERVER_PLAYER_DATA_SEPARATOR)
+				agencyData := strings.Split(agencies[agency], SERVER_DATA_SEPARATOR)
 				log.Infof("[CLIENT %v] Agency %v has %v winners", clientID, agencyData[0], agencyData[1])
 			}
 		} else {
-			log.Infof("[CLIENT %v] Agencies winners process is pending. Waiting %v and try againg", clientID, TIME_TO_TRY)
-			time.Sleep(TIME_TO_TRY)
+			log.Infof("[CLIENT %v] Agencies winners process is pending. Waiting %v and try againg", clientID, winnerService.retryTime)
+			time.Sleep(winnerService.retryTime)
 		}
 		agenciesWinnerProcess = agenciesData[0]
 	}
 }
 
-func (winnerService *WinnerService) validatePlayerList(playerList []string) []Player {
+// Builds player with given player string list
+func (winnerService *WinnerService) buildPlayerList(playerList []string) []Player {
 	var players []Player
 	for _, playerLine := range playerList {
-		playerData := strings.Split(playerLine, FILE_PLAYER_DATA_SEPARATOR)
+		playerData := strings.Split(playerLine, FILE_DATA_SEPARATOR)
 		if len(playerData) == PLAYER_DATA_SIZE {
 			player := NewPlayer(playerData[0], playerData[1], playerData[2], playerData[3])
 			players = append(players, player)
@@ -99,19 +103,19 @@ func (winnerService *WinnerService) validatePlayerList(playerList []string) []Pl
 	return players
 }
 
-// Builds and return the message to send Server and check if Player is Winner
-func (winnerService *WinnerService) getPlayersMsg(players []Player) string {
+// Builds and return the message to send to Server
+func (winnerService *WinnerService) buildPlayersMsg(players []Player) string {
 	var buffer bytes.Buffer
 	for i, player := range players {
 		buffer.WriteString(player.firstName)
-		buffer.WriteString(SERVER_PLAYER_DATA_SEPARATOR)
+		buffer.WriteString(SERVER_DATA_SEPARATOR)
 		buffer.WriteString(player.lastName)
-		buffer.WriteString(SERVER_PLAYER_DATA_SEPARATOR)
+		buffer.WriteString(SERVER_DATA_SEPARATOR)
 		buffer.WriteString(player.document)
-		buffer.WriteString(SERVER_PLAYER_DATA_SEPARATOR)
+		buffer.WriteString(SERVER_DATA_SEPARATOR)
 		buffer.WriteString(player.birthDate)
 		if i < (len(players) - 1) {
-			buffer.WriteString(PLAYER_SEPARATOR)
+			buffer.WriteString(SERVER_ENTITY_SEPARATOR)
 		}
 	}
 	return buffer.String()

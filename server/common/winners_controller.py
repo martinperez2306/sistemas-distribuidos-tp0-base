@@ -7,7 +7,7 @@ REQUEST_NAME_REGEX=r'REQUEST_NAME\[(.*?)\]'
 REQUEST_BODY_REGEX=r'REQUEST_BODY\[(.*?)\]'
 
 GET_WINNERS = "GET_WINNERS"
-GET_AGENCIES_WINNERS = "GET_AGENCIES_WINNERS"
+GET_AGENCIES = "GET_AGENCIES"
 
 class WinnersController:
     def __init__(self):
@@ -19,7 +19,7 @@ class WinnersController:
         request_parsed = self.__parse_request(request)
         if (request_parsed[1] == GET_WINNERS):
             return self.__get_winners(request_parsed[0], request_parsed[2])
-        elif (request_parsed[1] == GET_AGENCIES_WINNERS):
+        elif (request_parsed[1] == GET_AGENCIES):
             return self.__get_agencies_winners(request_parsed[0])
         else:
             return None
