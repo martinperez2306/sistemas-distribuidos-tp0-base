@@ -24,7 +24,7 @@ class Communicator:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._winner_controller = WinnersController()
-        self._client_socket_semaphore = Semaphore(1)
+        self._client_sockets_semaphore = Semaphore(1)
         self._client_sockets = list()
 
     def handle_communication(self):
@@ -80,9 +80,9 @@ class Communicator:
     def __init_connection(self, client_socket: socket):
         if(client_socket is not None):
             logging.info('Init Connection: {}'.format(client_socket.getpeername()))
-            self._client_socket_semaphore.acquire()
+            self._client_sockets_semaphore.acquire()
             self._client_sockets.append(client_socket)
-            self._client_socket_semaphore.release()
+            self._client_sockets_semaphore.release()
 
     def __get_request(self, client_socket: socket):
         if(client_socket is not None):
@@ -177,15 +177,17 @@ class Communicator:
         """
         if(client_socket is not None):
             logging.info('End connection: {}'.format(client_socket.getpeername()))
-            self._client_socket_semaphore.acquire()
+            self._client_sockets_semaphore.acquire()
             self._client_sockets = list(filter(lambda c: c.getpeername()[0] != client_socket.getpeername()[0] and c.getpeername()[1] != client_socket.getpeername()[1], self._client_sockets))
             client_socket.close()
-            self._client_socket_semaphore.release()
+            self._client_sockets_semaphore.release()
 
     def turn_off(self):
         """
             Turn off Communicator.
-            Release client and server resources and close it
+            Release clients and server resources and close it
         """
+        for client_socket in self._client_sockets:
+            self.__end_connection(client_socket)
         self._server_socket.shutdown(socket.SHUT_RDWR)
         self._server_socket.close()
