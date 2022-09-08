@@ -1,10 +1,9 @@
-from multiprocessing import Semaphore
+import datetime
 import logging
 
-
+from .winners_track import WinnersTrack
 from .winners_repository import WinnersRepository
 from .utils import *
-from datetime import datetime
 
 BATCH_SEPARATOR = "&"
 
@@ -15,6 +14,7 @@ AGENCIES = 5
 class WinnersService:
     def __init__(self):
         self._winners_repository = WinnersRepository()
+        self._winners_track = WinnersTrack()
         pass
 
     def get_winners_response(self, client: str, players_msg: str) -> str:
@@ -31,8 +31,13 @@ class WinnersService:
     def get_all_winners_response(self, client: str) -> str:
         logging.info("Get all winners response")
         logging.debug("Get all winners response. Client: {}".format(client))
-        all_winners = self._winners_repository.get_all_winners()
-        response = self.__get_winners_string(all_winners)
+        response = "PROCESSING_PENDING_"
+        processing_pending_count = self._winners_track.get_pending_process_count()
+        if (processing_pending_count == 0):
+            all_winners = self._winners_repository.get_all_winners()
+            response = self.__get_winners_string(all_winners)
+        else:
+            response += str(processing_pending_count)
         logging.info("Get all winners response. Response: {}".format(response))
         return response
 
@@ -59,7 +64,7 @@ class WinnersService:
             document = split[2]
             birth_date = split[3]
             try:
-                _ = datetime.strptime(birth_date, CONTESTANT_BIRTHDATE_FORMAT)
+                _ = datetime.datetime.strptime(birth_date, CONTESTANT_BIRTHDATE_FORMAT)
                 return Contestant(first_name, last_name, document, birth_date, client)
             except ValueError:
                 logging.info("The string is not a date with format " + CONTESTANT_BIRTHDATE_FORMAT)

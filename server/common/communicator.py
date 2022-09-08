@@ -129,7 +129,7 @@ class Communicator:
             Responde with a message and waits for other response.
             Return the new response
         """
-        logging.info('Respond to client {} with {} and wait.'.format(client_socket.getpeername(), response.decode(ENCODING)))
+        logging.info('Respond to connection {} with {} and wait.'.format(client_socket.getpeername(), response.decode(ENCODING)))
         self.__send(client_socket, response)
         return self.__receive(client_socket, expected_response_size)
 
@@ -137,7 +137,7 @@ class Communicator:
         """
             Responde with a message and continue.
         """ 
-        logging.info('Respond to client {} with {} and continue.'.format(client_socket.getpeername(), response.decode(ENCODING)))
+        logging.info('Respond to connection {} with {} and continue.'.format(client_socket.getpeername(), response.decode(ENCODING)))
         self.__send(client_socket, response)
 
     def __receive(self, client_socket: socket, buffsize: int):
@@ -146,7 +146,7 @@ class Communicator:
             Read client socket specific buffsize and returns the message of communication
             It wait for first data recieved and return when all data has been readed.
         """
-        logging.info('Recieving by client {} data with size: {}'.format(client_socket.getpeername(), buffsize))
+        logging.info('Recieving by connection {} data with size: {}'.format(client_socket.getpeername(), buffsize))
         data = b''
         if(client_socket is not None):
             client_socket.setblocking(True)
