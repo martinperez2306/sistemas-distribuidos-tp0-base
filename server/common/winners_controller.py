@@ -20,7 +20,7 @@ class WinnersController:
         if (request_parsed[1] == GET_WINNERS):
             return self.__get_winners(request_parsed[0], request_parsed[2])
         elif (request_parsed[1] == GET_AGENCIES):
-            return self.__get_agencies_winners(request_parsed[0])
+            return self.__get_agencies(request_parsed[0])
         else:
             return None
 
@@ -33,5 +33,5 @@ class WinnersController:
     def __get_winners(self, client: str, body: str):
         return self._winners_service.get_winners_response(client, body)
 
-    def __get_agencies_winners(self, client: str):
-        return self._winners_service.get_agencies_winners_response(client)
+    def __get_agencies(self, client: str):
+        return self._winners_service.get_agencies_response(client)

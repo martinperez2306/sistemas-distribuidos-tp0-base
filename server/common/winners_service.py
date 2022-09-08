@@ -19,41 +19,39 @@ class WinnersService:
         logging.info("Get winners response")
         logging.debug("Get winners response. Client: {}. Players Message: {}".format(client, players_msg))
         self._winners_track.track_init_process(client)
-        contestants = self.__get_contestants_from_message(client, players_msg)
+        contestants = self.__get_contestants_from_message(players_msg)
         winners = self.__get_winners(contestants)
         logging.debug("Get winners response. Winners: {}".format(winners))
         self._winners_repository.save_winners(winners)
+        self._winners_track.track_agency_winners(Agency(client, len(winners)))
         response = self.__get_winners_string(winners)
         self._winners_track.track_finish_process(client)
         logging.info("Get winners response. Response: {}".format(response))
         return response
 
-    def get_agencies_winners_response(self, client: str) -> str:
+    def get_agencies_response(self, client: str) -> str:
         logging.info("Get winners by agency response")
         logging.debug("Get winners by agency response. Client: {}".format(client))
         response = "PROCESS_PENDING&"
         processing_pending_count = self._winners_track.get_pending_process_count()
+        logging.debug("Processing pending count: {}".format(processing_pending_count))
         if (processing_pending_count == 0):
-            all_winners = self._winners_repository.get_all_winners()
-            agencies = list()
             logging.debug("Max Clients Tracked: {}".format(self._winners_track.get_max_clients_tracked()))
-            for agency_it in range(self._winners_track.get_max_clients_tracked()):
-                agency_id = str(agency_it + 1)
-                agency_winners = list(filter(lambda w: w.agency == agency_id, all_winners))
-                agencies.append(Agency(agency_id, agency_winners))
-            response = "PROCESS_FINISH&" + self.__get_agencies_string(agencies)
+            agencies = self._winners_track.get_agencies_track()
+            if len(agencies):
+                response = "PROCESS_FINISH&" + self.__get_agencies_string(agencies)
         else:
             response += str(processing_pending_count)
         logging.info("Get all winners response. Response: {}".format(response))
         return response
 
-    def __get_contestants_from_message(self, client: str, players_msg: str) -> 'list[Contestant]':
+    def __get_contestants_from_message(self, players_msg: str) -> 'list[Contestant]':
         logging.info("Get Contestants")
-        logging.debug("Get Contestants. Client: {}. Players Message: {}".format(client, players_msg))
+        logging.debug("Get Contestants. Players Message: {}".format(players_msg))
         player_list = self.__parse_batch_message(players_msg)
         contestant_list = []
         for player_msg in player_list:
-            contestant = self.__parse_contestant_message(client, player_msg)
+            contestant = self.__parse_contestant_message(player_msg)
             if (contestant):
                 contestant_list.append(contestant)
         return contestant_list
@@ -62,7 +60,7 @@ class WinnersService:
         return batch_message.split(ENTITY_SEPARATOR)
 
 
-    def __parse_contestant_message(self, client, player_message: str):
+    def __parse_contestant_message(self, player_message: str):
         split = player_message.split(MODEL_DATA_SEPARATOR)
         if (len(split) == PLAYER_DATA_SIZE):
             first_name = split[0]
@@ -71,7 +69,7 @@ class WinnersService:
             birth_date = split[3]
             try:
                 _ = datetime.datetime.strptime(birth_date, CONTESTANT_BIRTHDATE_FORMAT)
-                return Contestant(first_name, last_name, document, birth_date, client)
+                return Contestant(first_name, last_name, document, birth_date)
             except ValueError:
                 logging.info("The string is not a date with format " + CONTESTANT_BIRTHDATE_FORMAT)
         return None

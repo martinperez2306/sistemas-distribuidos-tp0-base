@@ -30,12 +30,11 @@ class WinnersRepository:
 
     def __get_contestant_from_line(self, line: str) -> Contestant:
         contestant_data = line.split(STORAGE_DATA_SEPARATOR)
-        first_name = self.__get_contestant_data_from_line(contestant_data[0])
-        last_name = self.__get_contestant_data_from_line(contestant_data[1])
-        document = self.__get_contestant_data_from_line(contestant_data[2])
-        birth_date = self.__get_contestant_data_from_line(contestant_data[3])
-        agency = self.__get_contestant_data_from_line(contestant_data[4])
-        return Contestant(first_name, last_name, document, birth_date, agency)
+        full_name = self.__get_contestant_data_from_line(contestant_data[0])
+        last_name = ""
+        document = self.__get_contestant_data_from_line(contestant_data[1])
+        birth_date = self.__get_contestant_data_from_line(contestant_data[2])
+        return Contestant(full_name, last_name, document, birth_date)
 
     def __get_contestant_data_from_line(self, contestant_data: str) -> str:
         return contestant_data.split(":")[1].strip()

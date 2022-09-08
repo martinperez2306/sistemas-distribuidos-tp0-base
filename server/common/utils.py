@@ -12,13 +12,12 @@ STORAGE_DATA_SEPARATOR = "|"
 
 """ Contestant data model. """
 class Contestant:
-	def __init__(self, first_name, last_name, document, birthdate, agency):
+	def __init__(self, first_name, last_name, document, birthdate):
 		""" Birthdate must be passed with format: 'YYYY-MM-DD'. """
 		self.first_name = first_name
 		self.last_name = last_name
 		self.document = document
 		self.birthdate = datetime.datetime.strptime(birthdate, '%Y-%m-%d')
-		self.agency = agency
 		
 	def __hash__(self):
 		return hash((self.first_name, self.last_name, self.document, self.birthdate))
@@ -38,13 +37,13 @@ def is_winner(contestant: Contestant) -> bool:
 def persist_winners(winners: 'list[Contestant]') -> None:
 	with open(STORAGE, 'a+') as file:
 		for winner in winners:
-			file.write(f'First name: {winner.first_name} | Last name: {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)} | Agency: {winner.agency}\n')
+			file.write(f'Full name: {winner.first_name} {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime("%d/%m/%Y")}\n')
 
 """ Agency data model. """
 class Agency:
-	def __init__(self, id: str, winners: 'list[Contestant]'):
+	def __init__(self, id: str, winners_count: int):
 		self.id = id
-		self.winners_count = len(winners)
+		self.winners_count = winners_count
 
 	def to_string(self):
 		return self.id + MODEL_DATA_SEPARATOR + str(self.winners_count)
