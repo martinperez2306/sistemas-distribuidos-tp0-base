@@ -1,4 +1,5 @@
 import datetime
+import time
 
 
 """ Winners storage location. """
@@ -30,7 +31,7 @@ class Contestant:
 """ Checks whether a contestant is a winner or not. """
 def is_winner(contestant: Contestant) -> bool:
 	# Simulate strong computation requirements using a sleep to increase function retention and force concurrency.
-	#time.sleep(0.001)
+	time.sleep(0.001)
 	return hash(contestant) % 17 == 0
 
 
