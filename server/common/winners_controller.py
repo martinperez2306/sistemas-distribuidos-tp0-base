@@ -1,6 +1,6 @@
 import re
 import logging
-from .winners_service import WinnerService
+from .winners_service import WinnersService
 
 REQUEST_CLIENT_REGEX = r'REQUEST_CLI\[(.*?)\]'
 REQUEST_NAME_REGEX=r'REQUEST_NAME\[(.*?)\]'
@@ -11,14 +11,14 @@ GET_ALL_WINNERS = "GET_ALL_WINNERS"
 
 class WinnersController:
     def __init__(self):
-        self._winners_service = WinnerService()
+        self._winners_service = WinnersService()
         pass
 
     def handle_request(self, request: str) -> str:
         logging.info("Handling client request {}".format(request))
         request_parsed = self.__parse_request(request)
         if (request_parsed[1] == GET_WINNERS):
-            return self.__get_winners(request_parsed[2])
+            return self.__get_winners(request_parsed[0], request_parsed[2])
         elif (request_parsed[1] == GET_ALL_WINNERS):
             return self.__get_all_winners(request_parsed[2])
         else:
@@ -30,8 +30,8 @@ class WinnersController:
         request_body = re.search(REQUEST_BODY_REGEX,request).group(1)
         return request_cli, request_id, request_body
 
-    def __get_winners(self, body: str):
-        return self._winners_service.get_winners_response(body)
+    def __get_winners(self, client: str, body: str):
+        return self._winners_service.get_winners_response(client, body)
 
     def __get_all_winners(self, body: str):
         pass
