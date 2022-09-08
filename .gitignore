@@ -6,3 +6,6 @@ bin/
 
 # Datasets
 **.csv
+
+# Logs
+/logs/

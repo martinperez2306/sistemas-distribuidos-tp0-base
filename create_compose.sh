@@ -1,20 +1,5 @@
 #!/bin/bash
-usage="${create_compose} [-h] [-d] [-f] [-s] -- 
-
-where:
-    -h, --help
-        Show this help text
-    -p, --print
-        Don't do anything, just print the result of the variable expansion(s)
-    -f, --file
-        Specify a file to read variables from
-    -s, --silent
-        Don't print warning messages (for example if no variables are found)
-
-examples:
-    VAR1=Something VAR2=1.2.3 ${PROGNAME} test.txt 
-    ${PROGNAME} test.txt -f my-variables.txt
-    ${PROGNAME} test.txt -f my-variables.txt > new-test.txt"
+usage="Debe ingresar el numero de clientes"
 
 if [ $# -eq 0 ]; then
   echo "$usage"
