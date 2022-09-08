@@ -95,3 +95,8 @@ En caso de que alguna agencia consulte a la central antes de que esta haya compl
 
 ## Consideraciones Generales
 Se espera que los alumnos realicen un fork del presente repositorio para el desarrollo de los ejercicios, el cual deberá contar con un README que explique cómo correr cada uno de estos. Para la segunda parte del TP también será necesaria una sección donde se explique el protocolo de comunicación implementado y los mecanismos de sincronización utilizado en el último ejercicio. Finalmente, se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección provistos [en el campus](https://campus.fi.uba.ar/course/view.php?id=761).
+
+
+## Actualizacion: Entrega TP0
+Para la entrega se adjunta la resolucion de los ejercicios junto a su documentacion correspondiente.
+Dicha documentacion se puede encontrar dentro de la carpeta [docs](https://github.com/martinperez2306/sistemas-distribuidos-tp0-base/tree/master/docs).
