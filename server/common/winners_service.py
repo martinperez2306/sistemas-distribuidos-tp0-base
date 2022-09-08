@@ -9,8 +9,6 @@ BATCH_SEPARATOR = "&"
 
 PLAYER_DATA_SIZE = 4
 
-AGENCIES = 5
-
 class WinnersService:
     def __init__(self):
         self._winners_repository = WinnersRepository()
@@ -28,14 +26,18 @@ class WinnersService:
         logging.info("Get winners response. Response: {}".format(response))
         return response
 
-    def get_all_winners_response(self, client: str) -> str:
-        logging.info("Get all winners response")
-        logging.debug("Get all winners response. Client: {}".format(client))
+    def get_agencies_winners_response(self, client: str) -> str:
+        logging.info("Get winners by agency response")
+        logging.debug("Get winners by agency response. Client: {}".format(client))
         response = "PROCESSING_PENDING_"
         processing_pending_count = self._winners_track.get_pending_process_count()
         if (processing_pending_count == 0):
             all_winners = self._winners_repository.get_all_winners()
-            response = self.__get_winners_string(all_winners)
+            agencies = list()
+            for agency_id in range(self._winners_track.get_max_clients_tracked()):
+                agency_winners = filter(lambda w: w.agency == agency_id, all_winners)
+                agencies.append(Agency(agency_id, agency_winners))
+            response = self.__get_agencies_string(all_winners)
         else:
             response += str(processing_pending_count)
         logging.info("Get all winners response. Response: {}".format(response))
@@ -88,5 +90,12 @@ class WinnersService:
             string += BATCH_SEPARATOR
         if not winners:
             string = "empty"
+        return string
+
+    def __get_agencies_string(self, agencies: 'list[Agency]') -> str:
+        string = ""
+        for agency in agencies:
+            string += agency.to_string()
+            string += BATCH_SEPARATOR
         return string
 

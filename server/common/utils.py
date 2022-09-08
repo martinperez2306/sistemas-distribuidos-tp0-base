@@ -39,3 +39,11 @@ def persist_winners(winners: 'list[Contestant]') -> None:
 	with open(STORAGE, 'a+') as file:
 		for winner in winners:
 			file.write(f'First name: {winner.first_name} | Last name: {winner.first_name} | {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime("%d/%m/%Y")}\n | Agency: {winner.agency}')
+
+class Agency:
+	def __init__(self, id, winners: 'list[Contestant]'):
+		self.id = id
+		self.winners_count = len(winners)
+
+	def to_string(self):
+		return self.id + CONTESTANT_SEPARATOR + self.winners_count
