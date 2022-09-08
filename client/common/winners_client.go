@@ -22,13 +22,13 @@ func NewWinnersClient() *WinnersClient {
 }
 
 func (winnersClient *WinnersClient) getWinners(communicator *Communicator, clientID string, body string) (string, error) {
-	getWinnersMessage := winnersClient.getRequestMessage(GET_WINNERS, body)
+	getWinnersMessage := winnersClient.getRequestMessage(clientID, GET_WINNERS, body)
 	return communicator.request(clientID, getWinnersMessage)
 }
 
-func (winnersClient *WinnersClient) getRequestMessage(id string, body string) string {
-	requestClient := fmt.Sprintf(REQUEST_CLIENT_FORMAT, id)
-	requestName := fmt.Sprintf(REQUEST_NAME_FORMAT, id)
+func (winnersClient *WinnersClient) getRequestMessage(client string, name string, body string) string {
+	requestClient := fmt.Sprintf(REQUEST_CLIENT_FORMAT, client)
+	requestName := fmt.Sprintf(REQUEST_NAME_FORMAT, name)
 	requestBody := fmt.Sprintf(REQUEST_BODY_FORMAT, body)
 	var buffer bytes.Buffer
 	buffer.WriteString(requestClient)
