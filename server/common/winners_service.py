@@ -37,7 +37,8 @@ class WinnersService:
             all_winners = self._winners_repository.get_all_winners()
             agencies = list()
             logging.debug("Max Clients Tracked: {}".format(self._winners_track.get_max_clients_tracked()))
-            for agency_id in range(self._winners_track.get_max_clients_tracked()):
+            for agency_it in range(self._winners_track.get_max_clients_tracked()):
+                agency_id = str(agency_it + 1)
                 agency_winners = list(filter(lambda w: w.agency == agency_id, all_winners))
                 agencies.append(Agency(agency_id, agency_winners))
             response = "PROCESS_FINISH&" + self.__get_agencies_string(agencies)

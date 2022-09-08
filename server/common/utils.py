@@ -41,9 +41,9 @@ def persist_winners(winners: 'list[Contestant]') -> None:
 			file.write(f'First name: {winner.first_name} | Last name: {winner.last_name} | Document: {winner.document} | Date of Birth: {winner.birthdate.strftime(CONTESTANT_BIRTHDATE_FORMAT)} | Agency: {winner.agency}\n')
 
 class Agency:
-	def __init__(self, id: int, winners: 'list[Contestant]'):
+	def __init__(self, id: str, winners: 'list[Contestant]'):
 		self.id = id
 		self.winners_count = len(winners)
 
 	def to_string(self):
-		return str(self.id) + CONTESTANT_SEPARATOR + str(self.winners_count)
+		return self.id + CONTESTANT_SEPARATOR + str(self.winners_count)
